@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>1016786265689-71dkln8ckjirfr7es36jqp73588b8p2d.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.1016786265689-71dkln8ckjirfr7es36jqp73588b8p2d</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>1016786265689-qd8qlua494ap05pdl71bnbglivff98pa.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCKIyiAWBeTMUGJfSlXe0oft9UARSF-AlU</string>
+	<key>GCM_SENDER_ID</key>
+	<string>1016786265689</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.unitedAreechola</string>
+	<key>PROJECT_ID</key>
+	<string>unitedareechola</string>
+	<key>STORAGE_BUCKET</key>
+	<string>unitedareechola.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:1016786265689:ios:02b31e396aab5b669c7348</string>
+	<key>DATABASE_URL</key>
+	<string>https://unitedareechola-default-rtdb.firebaseio.com</string>
+</dict>
+</plist>

@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "1016786265689",
+    "project_id": "unitedareechola",
+    "storage_bucket": "unitedareechola.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1016786265689:android:2cc6a6dc55c64dc19c7348",
+        "android_client_info": {
+          "package_name": "com.example.united_areechola"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1016786265689-9viue3tcmp4vtrf3ui8a9474q2mj8ikc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDrTBt2v8fNBKbNgbKj92lY_d_faInHalc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1016786265689-9viue3tcmp4vtrf3ui8a9474q2mj8ikc.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1016786265689-71dkln8ckjirfr7es36jqp73588b8p2d.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.unitedAreechola"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
