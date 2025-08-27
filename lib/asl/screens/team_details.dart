@@ -32,34 +32,6 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
         .getTeams(widget.seasonModel.id ?? "");
   }
 
-  Future<void> transferDataToSeasonSubcollection(String seasonId) async {
-    // Get the references of the existing collections
-    final teamsRef = await FirebaseFirestore.instance.collection('teams').get();
-    final matchesRef =
-        await FirebaseFirestore.instance.collection('matches').get();
-
-    // Define the season document
-    final seasonDoc =
-        FirebaseFirestore.instance.collection('seasons').doc(seasonId);
-
-    // Transfer teams to the season subcollection
-    for (var teamDoc in teamsRef.docs) {
-      final teamData = teamDoc.data();
-      teamData['seasonId'] = seasonId; // Add seasonId to the team document
-      await seasonDoc.collection('teams').doc(teamDoc.id).set(teamData);
-    }
-
-    // Transfer matches to the season subcollection
-    for (var matchDoc in matchesRef.docs) {
-      final matchData = matchDoc.data();
-      matchData['seasonId'] = seasonId; // Add seasonId to the match document
-      await seasonDoc.collection('matches').doc(matchDoc.id).set(matchData);
-    }
-
-    print(
-        'Data transferred to season subcollection with seasonId successfully!');
-  }
-
   playerupdate() async {
     final playerRef =
         await FirebaseFirestore.instance.collection('players').get();
@@ -99,7 +71,7 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
     return Scaffold(
       backgroundColor: Color(0xffFAFAFA),
       body: DefaultTabController(
-        length: 6,
+        length: 5,
         child: Column(
           children: [
             Container(
@@ -127,7 +99,7 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
                           child: Text(
                             "ASL ${widget.seasonModel.seasonName.toUpperCase()}",
                             style: GoogleFonts.inter(
-                              fontSize: 26,
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
@@ -152,7 +124,7 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
                       Tab(text: "Matches"),
                       Tab(text: "Table"),
                       Tab(text: "Players"),
-                      Tab(text: "Stats"),
+
                       // Tab(text: "Knockout"),
                     ],
                   ),
@@ -173,8 +145,7 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
                     seasonModel: widget.seasonModel,
                   ),
                   //! matches
-                  SingleChildScrollView(
-                      child: ShowMatch(seasonModel: widget.seasonModel)),
+                  ShowMatch(seasonModel: widget.seasonModel),
                   // Teams tab content
                   //! team table
                   SingleChildScrollView(
@@ -183,18 +154,10 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
                   )),
 
                   // Players tab content
-                  SingleChildScrollView(
-                      child: Players(
+                  Players(
                     seasonModel: widget.seasonModel,
-                  )),
-                  SingleChildScrollView(
-                      child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      topScorers(scrWidth),
-                      topAssisters(scrWidth),
-                    ],
-                  )),
+                  ),
+
                   // SingleChildScrollView(child: BracketView()),
                 ],
               ),
@@ -208,6 +171,8 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
   Widget topScorers(double width) {
     return StreamBuilder<List<PlayerModel>>(
         stream: FirebaseFirestore.instance
+            .collection("seasons")
+            .doc(widget.seasonModel.id)
             .collection('players')
             .orderBy("statics.goal", descending: true)
             .limit(3)
@@ -231,115 +196,117 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
               child: Text("No goals have been recorded yet!"),
             );
           }
-          return Center(
+          return SizedBox(
+            width: double.infinity,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Padding(padding: EdgeInsets.only(top: width * 0.03)),
+                Padding(padding: EdgeInsets.only(top: 20)),
                 Text(
                   "Top Scorer",
                   style: GoogleFonts.inter(
-                      fontSize: 17, fontWeight: FontWeight.w700),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                Padding(padding: EdgeInsets.only(top: 20)),
+                const SizedBox(height: 20),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: Container(
-                    // width: 400,
                     decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1), // Subtle shadow
-                            blurRadius: 8,
-                            offset: Offset(0, 3),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ListView.separated(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: topScorers.length,
+                      separatorBuilder: (_, __) => Divider(
+                        color: Colors.grey.shade200,
+                        height: 1,
+                      ),
+                      itemBuilder: (ctx, index) {
+                        final player = topScorers[index];
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
                           ),
-                        ],
-                        color: Color(0xffFFFFFF),
-                        borderRadius: BorderRadius.all(Radius.circular(15))),
-                    child: ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: topScorers.length,
-                        itemBuilder: (ctx, index) {
-                          final player = topScorers[index];
-                          return Padding(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: width * 0.02, vertical: width * 0.01),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Row(
-                                  // crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
+                          child: Row(
+                            children: [
+                              // Player Image
+                              // CircleAvatar(
+                              //   radius: 28,
+                              //   backgroundImage: NetworkImage(player.image),
+                              // ),
+                              // const SizedBox(width: 12),
+
+                              // Name & Team
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
-                                      // crossAxisAlignment: CrossAxisAlignment.start,
-                                      // mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        CircleAvatar(
-                                          radius: 30,
-                                          backgroundImage:
-                                              NetworkImage(player.image),
-                                        ),
-                                        Padding(
-                                            padding: EdgeInsets.only(left: 10)),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            ConstrainedBox(
-                                              constraints: BoxConstraints(
-                                                  maxWidth: width * 0.2),
-                                              child: Text(
-                                                player.name,
-                                                style: GoogleFonts.inter(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.bold),
-                                              ),
-                                            ),
-                                            Consumer(builder: (context, ref, _) {
-                                              ref.watch(teams);
-                                              return Text(
-                                                ref.read(teams)[player.teamId] ??
-                                                    "",
-                                                style: GoogleFonts.inter(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w500),
-                                              );
-                                            }),
-                                          ],
-                                        )
-                                      ],
+                                    Text(
+                                      player.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                    if (index == 0)
-                                      CircleAvatar(
-                                        radius: 20,
-                                        backgroundColor: Colors.green,
-                                        child: Text(
-                                          player.statics['goal'].toString(),
+                                    const SizedBox(height: 4),
+                                    Consumer(
+                                      builder: (context, ref, _) {
+                                        ref.watch(teams);
+                                        return Text(
+                                          ref.read(teams)[player.teamId] ?? "",
                                           style: GoogleFonts.inter(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w700,
-                                              color: Colors.white),
-                                        ),
-                                      )
-                                    else
-                                      Text(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Goals
+                              index == 0
+                                  ? CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor: Colors.green,
+                                      child: Text(
                                         player.statics['goal'].toString(),
                                         style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700),
-                                      )
-                                  ],
-                                )
-                              ],
-                            ),
-                          );
-                        }),
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      player.statics['goal'].toString(),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -351,6 +318,8 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
   Widget topAssisters(double width) {
     return StreamBuilder<List<PlayerModel>>(
         stream: FirebaseFirestore.instance
+            .collection("seasons")
+            .doc(widget.seasonModel.id)
             .collection('players')
             .orderBy("statics.assist", descending: true)
             .limit(3)
@@ -377,123 +346,118 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Padding(padding: EdgeInsets.only(top: width * 0.03)),
+                Padding(padding: EdgeInsets.only(top: 20)),
                 Text(
                   "Top Assister",
                   style: GoogleFonts.inter(
-                      fontSize: 17, fontWeight: FontWeight.w700),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                Padding(padding: EdgeInsets.only(top: 20)),
+                const SizedBox(height: 20),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: Container(
                     width: 400,
                     decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                Colors.black.withOpacity(0.1), // Subtle shadow
-                            blurRadius: 8,
-                            offset: Offset(0, 3),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ListView.separated(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: topAssisters.length,
+                      separatorBuilder: (_, __) => Divider(
+                        color: Colors.grey.shade200,
+                        height: 1,
+                      ),
+                      itemBuilder: (ctx, index) {
+                        final player = topAssisters[index];
+                        final assists = player.statics['assist'] ?? 0;
+
+                        if (assists <= 0) return const SizedBox();
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
                           ),
-                        ],
-                        color: Color(0xffFFFFFF),
-                        borderRadius: BorderRadius.all(Radius.circular(15))),
-                    child: ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: topAssisters.length,
-                        itemBuilder: (ctx, index) {
-                          final player = topAssisters[index];
-                          if ((player.statics['assist'] ?? 0) > 0) {
-                            return Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: width * 0.02,
-                                  vertical: width * 0.02),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Row(
-                                    // crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceAround,
-                                    children: [
-                                      Row(
-                                        // crossAxisAlignment: CrossAxisAlignment.start,
-                                        // mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          CircleAvatar(
-                                            radius: 30,
-                                            backgroundImage:
-                                                NetworkImage(player.image),
-                                          ),
-                                          Padding(
-                                              padding:
-                                                  EdgeInsets.only(left: 10)),
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              ConstrainedBox(
-                                                constraints: BoxConstraints(
-                                                    maxWidth: width * 0.2),
-                                                child: Text(
-                                                  player.name,
-                                                  style: GoogleFonts.inter(
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ),
-                                              Consumer(
-                                                  builder: (context, ref, _) {
-                                                ref.watch(teams);
-                                                return Text(
-                                                  ref.read(teams)[
-                                                          player.teamId] ??
-                                                      "",
-                                                  style: GoogleFonts.inter(
-                                                      fontSize: 11,
-                                                      fontWeight:
-                                                          FontWeight.w500),
-                                                );
-                                              }),
-                                            ],
-                                          )
-                                        ],
+                          child: Row(
+                            children: [
+                              // Player Image
+                              // CircleAvatar(
+                              //   radius: 28,
+                              //   backgroundImage: NetworkImage(player.image),
+                              // ),
+                              // const SizedBox(width: 12),
+
+                              // Name & Team
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      player.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      if (index == 0)
-                                        CircleAvatar(
-                                          radius: 20,
-                                          backgroundColor: Colors.green,
-                                          child: Text(
-                                            player.statics['assist'].toString(),
-                                            style: GoogleFonts.inter(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w700,
-                                                color: Colors.white),
-                                          ),
-                                        )
-                                      else
-                                        Text(
-                                          player.statics['assist'].toString(),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Consumer(
+                                      builder: (context, ref, _) {
+                                        ref.watch(teams);
+                                        return Text(
+                                          ref.read(teams)[player.teamId] ?? "",
                                           style: GoogleFonts.inter(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w700),
-                                        )
-                                    ],
-                                  )
-                                ],
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
                               ),
-                            );
-                          } else {
-                            return SizedBox();
-                          }
-                        }),
+
+                              // Assist count
+                              index == 0
+                                  ? CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor: Colors.green,
+                                      child: Text(
+                                        assists.toString(),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      assists.toString(),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],

@@ -141,7 +141,6 @@ class _DashboardChartState extends State<DashboardChart> {
       for (var transaction in events.docs) {
         transactions.add({
           'start_date': transaction['startDate'].toDate(),
-          'end_date': transaction['expireDate'].toDate(),
           'amount': transaction['amount'] ?? 0,
         });
       }
@@ -155,7 +154,8 @@ class _DashboardChartState extends State<DashboardChart> {
       } else if (selectedRange == 'Yearly') {
         processYearlyData(transactions);
       }
-    } catch (e) {
+    } catch (e, s) {
+      print(s.toString());
       print(e.toString());
     }
   }
@@ -185,7 +185,8 @@ class _DashboardChartState extends State<DashboardChart> {
         rawBarGroups = barChartGroups;
         showingBarGroups = rawBarGroups;
       });
-    } catch (e) {
+    } catch (e, s) {
+      print(s.toString());
       print(e.toString());
     }
   }
@@ -197,19 +198,12 @@ class _DashboardChartState extends State<DashboardChart> {
       Map<int, double> monthlyData = {for (int i = 0; i < 12; i++) i: 0.0};
       for (var transaction in transactions) {
         DateTime startDate = transaction['start_date'];
-        DateTime endDate = transaction['end_date'];
-        double amount = transaction['amount'];
 
-        int totalMonth = (endDate.year - startDate.year) * 12 +
-            (endDate.month - startDate.month) +
-            1;
+        double amount = transaction['amount'].toDouble() ?? 0.0;
 
-        double amountPermonth = amount / totalMonth;
+        int month = startDate.month;
 
-        for (int i = 0; i < totalMonth; i++) {
-          int month = (startDate.month + i - 1) % 12 + 1;
-          monthlyData[month] = (monthlyData[month] ?? 0) + amountPermonth;
-        }
+        monthlyData[month] = (monthlyData[month] ?? 0) + amount;
       }
 
       List<BarChartGroupData> barChartGroups = [];
@@ -224,7 +218,8 @@ class _DashboardChartState extends State<DashboardChart> {
         rawBarGroups = barChartGroups;
         showingBarGroups = rawBarGroups;
       });
-    } catch (e) {
+    } catch (e,s) {
+      print(s.toString());
       print(e);
     }
   }
@@ -235,15 +230,11 @@ class _DashboardChartState extends State<DashboardChart> {
 
       for (var transaction in transactions) {
         DateTime startDate = transaction['start_date'];
-        DateTime endDate = transaction['end_date'];
-        double amount = transaction['amount'];
 
-        int totalYears = endDate.year - startDate.year + 1;
-        double amountPerYear = amount / totalYears;
+        double amount = transaction['amount'].toDouble() ?? 0.0;
 
-        for (int year = startDate.year; year <= endDate.year; year++) {
-          yearlyData[year] = (yearlyData[year] ?? 0) + amountPerYear;
-        }
+        int year = startDate.year;
+        yearlyData[year] = (yearlyData[year] ?? 0) + amount;
       }
 
       List<BarChartGroupData> barChartGroups = [];
@@ -261,7 +252,8 @@ class _DashboardChartState extends State<DashboardChart> {
         rawBarGroups = barChartGroups;
         showingBarGroups = rawBarGroups;
       });
-    } catch (e) {
+    } catch (e,s) {
+      print(s.toString());
       print("Error in processYearlyData: ${e.toString()}");
     }
   }

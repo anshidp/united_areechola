@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:united_areechola/asl_admin/screens/add_manager.dart';
+import 'package:united_areechola/asl_admin/screens/add_matches.dart';
 import 'package:united_areechola/asl_admin/screens/add_players.dart';
 import 'package:united_areechola/asl_admin/screens/add_season.dart';
 import 'package:united_areechola/asl_admin/screens/add_team.dart';
-import 'package:united_areechola/asl_admin/screens/show_matches.dart';
 
 class AslAdmin extends StatefulWidget {
   const AslAdmin({super.key});
@@ -14,10 +15,11 @@ class AslAdmin extends StatefulWidget {
 
 class _AslAdminState extends State<AslAdmin> {
   final List<Widget> sections = [
-    AddNewMatches(),
-    AddPlayers(),
+    AddSeason(),
+    AddManager(),
     AddTeams(),
-    AddSeason()
+    AddPlayers(),
+    AddMatches(),
   ];
   @override
   Widget build(BuildContext context) {
@@ -36,10 +38,11 @@ class _AslAdminState extends State<AslAdmin> {
                 unselectedLabelStyle: GoogleFonts.inter(fontSize: 14),
                 indicatorSize: TabBarIndicatorSize.tab,
                 tabs: [
-                  Tab(icon: Icon(Icons.group), text: "AddMatches"),
-                  Tab(icon: Icon(Icons.group), text: "AddPlayers"),
-                  Tab(icon: Icon(Icons.star), text: "AddTeams"),
-                  Tab(icon: Icon(Icons.ac_unit_rounded), text: "AddSeason"),
+                  Tab(icon: Icon(Icons.ac_unit_rounded), text: "Add Season"),
+                  Tab(icon: Icon(Icons.star), text: "Add Manager"),
+                  Tab(icon: Icon(Icons.star), text: "Add Teams"),
+                  Tab(icon: Icon(Icons.group), text: "Add Players"),
+                  Tab(icon: Icon(Icons.group), text: "Add Matches"),
                 ]),
             Expanded(
                 child: TabBarView(

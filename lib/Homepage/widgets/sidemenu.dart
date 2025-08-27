@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:united_areechola/authentication/screens/login.dart';
-import 'package:united_areechola/common/common.dart';
 
 class SideMenu extends StatefulWidget {
   final TabController _tabController;
@@ -20,361 +19,94 @@ class SideMenu extends StatefulWidget {
 int selectedTab = 0;
 int subTab = 0;
 
-class _SideMenuState extends State<SideMenu> {
+class _SideMenuState extends State<SideMenu>
+    with SingleTickerProviderStateMixin {
   ScrollController scrollController = ScrollController();
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  final List<MenuItem> menuItems = [
+    MenuItem(Icons.dashboard_rounded, "Dashboard", 0),
+    MenuItem(Icons.person_add_alt_1_rounded, "Add Users", 1),
+    MenuItem(Icons.subscriptions_rounded, "Add Subscription", 2),
+    MenuItem(Icons.event_rounded, "Add Events", 3),
+    MenuItem(Icons.admin_panel_settings_rounded, "ASL ADMIN", 4),
+    MenuItem(Icons.sports_soccer_rounded, "ASL", 5),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Consumer(
       builder: (BuildContext context, WidgetRef ref, Widget? child) {
-        // final admin = ref.watch(adminModelProvider);
-
         return Container(
-          // color: const Color(0xff231F20),
-          color: const Color(0xFFFAFAFA),
-          width: 230,
-          child: Theme(
-            data: ThemeData(
-              highlightColor: const Color(0xffF5F6F7),
+          width: 280,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF1E3A8A), // Deep blue
+                Color(0xFF1E40AF), // Medium blue
+                Color(0xFF3B82F6), // Lighter blue
+              ],
             ),
-            child: Scrollbar(
-              controller: scrollController,
-              child: ListView(
-                controller: scrollController,
-                children: [
-                  const SizedBox(height: 10),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 30),
-                    child: Column(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(2, 0),
+              ),
+            ],
+          ),
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Column(
+              children: [
+                // Header Section
+                _buildHeader(),
+
+                // Navigation Items
+                Expanded(
+                  child: Scrollbar(
+                    controller: scrollController,
+                    thumbVisibility: true,
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                       children: [
-                        Container(
-                          width: 600,
-                          height: 200,
-                          decoration: const BoxDecoration(
-                              image: DecorationImage(
-                                  image: AssetImage(
-                                      "assets/logo-removebg-preview.png"))),
-                        ),
-
-                        ///Dashboard
-                        Container(
-                          margin: const EdgeInsets.all(7),
-                          height: 50,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: selectedTab == 0
-                                ? const Color(0xff003F62)
-                                : Colors.white,
-                          ),
-                          // color: Color(0xFF1a2226),
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                widget._tabController.animateTo((0));
-                                selectedTab = 0;
-                                // subTab = 0;
-                              });
-                            },
-                            child: Row(
-                              children: [
-                                const SizedBox(
-                                  width: 10,
-                                ),
-                                Icon(
-                                  Icons.dashboard,
-                                  color: selectedTab == 0
-                                      ? Colors.white
-                                      : Colors.black,
-                                  size: 18,
-                                ),
-                                const SizedBox(
-                                  width: 7,
-                                ),
-                                Text(
-                                  "Dashboard",
-                                  style: TextStyle(
-                                    fontFamily: "PublicSans",
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                    color: selectedTab == 0
-                                        ? Colors.white
-                                        : Color(0xff626C71),
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        // Divider(
-                        //   color: Colors.blueGrey.shade800,
-                        // ),
-                        // add users
-                        Container(
-                          margin: const EdgeInsets.all(7),
-                          height: 50,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: selectedTab == 1
-                                ? const Color(0xff003F62)
-                                : Colors.white,
-                          ),
-                          // color: Color(0xFF1a2226),
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                widget._tabController.animateTo((1));
-                                selectedTab = 1;
-                                // subTab = 0;
-                              });
-                            },
-                            child: Row(
-                              children: [
-                                const SizedBox(
-                                  width: 10,
-                                ),
-                                Icon(
-                                  Icons.person,
-                                  color: selectedTab == 1
-                                      ? Colors.white
-                                      : Colors.black,
-                                  size: 18,
-                                ),
-                                const SizedBox(
-                                  width: 7,
-                                ),
-                                Text(
-                                  "Add Users",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: selectedTab == 1
-                                        ? Colors.white
-                                        : Color(0xff626C71),
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                        // Divider(
-                        //   color: Colors.blueGrey.shade800,
-                        // ),
-                        Container(
-                          margin: const EdgeInsets.all(7),
-                          height: 50,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: selectedTab == 2
-                                ? const Color(0xff003F62)
-                                : Colors.white,
-                          ),
-                          // color: Color(0xFF1a2226),
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                widget._tabController.animateTo((2));
-                                selectedTab = 2;
-                                // subTab = 0;
-                              });
-                            },
-                            child: Row(
-                              children: [
-                                const SizedBox(
-                                  width: 10,
-                                ),
-                                Icon(
-                                  Icons.account_balance_wallet_rounded,
-                                  color: selectedTab == 2
-                                      ? Colors.white
-                                      : Colors.black,
-                                  size: 18,
-                                ),
-                                const SizedBox(
-                                  width: 7,
-                                ),
-                                Text(
-                                  "Add Subcription",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: selectedTab == 2
-                                        ? Colors.white
-                                        : Color(0xff626C71),
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        // Divider(
-                        //   color: Colors.blueGrey.shade800,
-                        // ),
-                        // Add events
-                        Container(
-                          margin: const EdgeInsets.all(7),
-                          height: 50,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: selectedTab == 3
-                                ? const Color(0xff003F62)
-                                : Colors.white,
-                          ),
-                          // color: Color(0xFF1a2226),
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                widget._tabController.animateTo((3));
-                                selectedTab = 3;
-                                // subTab = 0;
-                              });
-                            },
-                            child: Row(
-                              children: [
-                                const SizedBox(
-                                  width: 10,
-                                ),
-                                Icon(
-                                  Icons.calendar_today_sharp,
-                                  color: selectedTab == 3
-                                      ? Colors.white
-                                      : Colors.black,
-                                  size: 18,
-                                ),
-                                const SizedBox(
-                                  width: 7,
-                                ),
-                                Text(
-                                  "Add Events",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: selectedTab == 3
-                                        ? Colors.white
-                                        : Color(0xff626C71),
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                        Container(
-                            margin: const EdgeInsets.all(7),
-                            height: 50,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: selectedTab == 4
-                                  ? const Color(0xff003F62)
-                                  : Colors.white,
-                            ),
-                            // color: Color(0xFF1a2226),
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  widget._tabController.animateTo((4));
-                                  selectedTab = 4;
-                                  // subTab = 0;
-                                });
-                              },
-                              child: Row(
-                                children: [
-                                  const SizedBox(
-                                    width: 10,
-                                  ),
-                                  Icon(
-                                    Icons.calendar_today_sharp,
-                                    color: selectedTab == 4
-                                        ? Colors.white
-                                        : Colors.black,
-                                    size: 18,
-                                  ),
-                                  const SizedBox(
-                                    width: 7,
-                                  ),
-                                  Text(
-                                    "ASL ADMIN",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: selectedTab == 4
-                                          ? Colors.white
-                                          : Color(0xff626C71),
-                                    ),
-                                  )
-                                ],
-                              ),
-                            )),
-                        Container(
-                            margin: const EdgeInsets.all(7),
-                            height: 50,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: selectedTab == 5
-                                  ? const Color(0xff003F62)
-                                  : Colors.white,
-                            ),
-                            // color: Color(0xFF1a2226),
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  widget._tabController.animateTo((5));
-                                  selectedTab = 5;
-                                  // subTab = 0;
-                                });
-                              },
-                              child: Row(
-                                children: [
-                                  const SizedBox(
-                                    width: 10,
-                                  ),
-                                  SizedBox(
-                                      width: 30,
-                                      height: 35,
-                                      child:
-                                          Image.asset(ImageConstants.clubLogo)),
-                                  const SizedBox(
-                                    width: 7,
-                                  ),
-                                  Text(
-                                    "ASL",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: selectedTab == 5
-                                          ? Colors.white
-                                          : Color(0xff626C71),
-                                    ),
-                                  )
-                                ],
-                              ),
-                            )),
-
-                        // Divider(
-                        //   color: Colors.blueGrey.shade800,
-                        // ),
-
-                        //LogOut
-                        InkWell(
-                          onTap: () {
-                            setState(() {});
-                            signOutUser();
-                          },
-                          child: CustomSideMenuItem(
-                            title: 'Logout',
-                            icon: Icons.logout,
-                            iconColor: Colors.black,
-                            iconSize: 18,
-                            titleStyle: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                            ),
-                          ),
-                        )
+                        ...menuItems.map((item) => _buildMenuItem(item)),
+                        const SizedBox(height: 20),
+                        _buildDivider(),
+                        const SizedBox(height: 8),
+                        _buildLogoutItem(),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                // Footer
+                _buildFooter(),
+              ],
             ),
           ),
         );
@@ -382,29 +114,291 @@ class _SideMenuState extends State<SideMenu> {
     );
   }
 
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          // Logo Container
+          Container(
+            width: 80,
+            height: 80,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                "assets/logo-removebg-preview.png",
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // App Name
+          Text(
+            "United Areechola",
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Admin Panel",
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: Colors.white.withOpacity(0.7),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(MenuItem item) {
+    final isSelected = selectedTab == item.index;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _onMenuTap(item.index),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? Colors.white.withOpacity(0.15)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: isSelected
+                  ? Border.all(color: Colors.white.withOpacity(0.3), width: 1)
+                  : null,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Colors.white.withOpacity(0.2)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    item.icon,
+                    color: isSelected
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.7),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    item.title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Container(
+      height: 1,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.transparent,
+            Colors.white.withOpacity(0.3),
+            Colors.transparent,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutItem() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: signOutUser,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.red.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.logout_rounded,
+                  color: Colors.red.shade300,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                "Logout",
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.red.shade300,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.admin_panel_settings_rounded,
+                  size: 16,
+                  color: Colors.white.withOpacity(0.7),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  "Administrator",
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onMenuTap(int index) {
+    setState(() {
+      selectedTab = index;
+      widget._tabController.animateTo(index);
+    });
+  }
+
   signOutUser() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (alertDialogContext) {
         return AlertDialog(
-          title: Text(
-            'Are you sure ?',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange.shade400,
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Confirm Logout',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
           ),
           content: Text(
-            'Do you want to logout',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+            'Are you sure you want to logout? You will need to sign in again to access the admin panel.',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w400,
+              fontSize: 14,
+              color: Colors.grey.shade600,
+              height: 1.4,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(alertDialogContext),
+              style: TextButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               child: Text(
-                'No',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                'Cancel',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade600,
+                ),
               ),
             ),
             Consumer(builder: (context, ref, child) {
-              return TextButton(
+              return ElevatedButton(
                 onPressed: () async {
                   subTab = 0;
                   selectedTab = 0;
@@ -414,27 +408,28 @@ class _SideMenuState extends State<SideMenu> {
                   prefs.remove("anshi");
                   if (context.mounted) {
                     Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const LoginPage()),
-                        (route) => false);
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const LoginPage()),
+                      (route) => false,
+                    );
                   }
-
-                  // await FirebaseAuth.instance.signOut();
-                  //ref.read(authControllerProvider.notifier).logoutUser(context);
-                  // Navigator.pushAndRemoveUntil(
-
-                  //     context,
-                  //     MaterialPageRoute(
-                  //
-                  //
-                  //         builder: (context) =>
-                  //             LoginPageWidget()),
-                  //         (route) => false);
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade500,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
                 child: Text(
-                  'Yes',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                  'Logout',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               );
             }),
@@ -445,56 +440,10 @@ class _SideMenuState extends State<SideMenu> {
   }
 }
 
-class CustomSideMenuItem extends StatelessWidget {
-  const CustomSideMenuItem({
-    super.key,
-    this.icon,
-    this.iconSize = 18,
-    this.iconColor = Colors.white,
-    this.title,
-    this.titleStyle,
-    this.onTap,
-    this.backColor,
-  });
+class MenuItem {
+  final IconData icon;
+  final String title;
+  final int index;
 
-  final IconData? icon;
-  final double? iconSize;
-  final Color? iconColor;
-  final Color? backColor;
-  final String? title;
-  final TextStyle? titleStyle;
-
-  final Function? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      child: Container(
-        height: 50,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        width: double.infinity,
-        color: backColor,
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: iconSize,
-              color: iconColor,
-            ),
-            const SizedBox(
-              width: 4,
-            ),
-            Text(
-              title ?? '',
-              style: titleStyle ??
-                  GoogleFonts.poppins(
-                    color: Colors.grey[400],
-                    fontSize: 13,
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  MenuItem(this.icon, this.title, this.index);
 }

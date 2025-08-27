@@ -94,6 +94,7 @@ Future<bool> addDialog(BuildContext context, String text) async {
 class FirebaseContants {
   static const transactions = "transactions";
   static const members = "Members";
+  static const notification = "notification";
 }
 
 Future<bool> myalert(BuildContext context, String message) async {

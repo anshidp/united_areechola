@@ -1,11 +1,14 @@
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:united_areechola/authentication/screens/splash_screen.dart';
 import 'package:united_areechola/firebase_options.dart';
+import 'package:united_areechola/notification_service/background_handler.dart';
+import 'package:united_areechola/notification_service/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,14 +23,19 @@ void main() async {
               messagingSenderId: "1016786265689",
               appId: "1:1016786265689:web:b078345a011b94e89c7348"));
     } else if (Platform.isIOS) {
-      print('ios');
+      debugPrint('ios');
       await Firebase.initializeApp(options: DefaultFirebaseOptions.ios);
     } else {
       await Firebase.initializeApp(options: DefaultFirebaseOptions.android);
     }
   } catch (e) {
-    print('Error Initializing Firebase: $e');
+    debugPrint('Error Initializing Firebase: $e');
   }
+
+  await FirebaseNotificationService.initialize();
+
+  // Set background handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   runApp(const ProviderScope(child: MyApp()));
 }
 

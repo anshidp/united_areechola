@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:united_areechola/Homepage/Screens/Homepage.dart';
 import 'package:united_areechola/Models/userdatamodel.dart';
 import 'package:united_areechola/authentication/screens/login.dart';
+import 'package:united_areechola/common/common.dart';
 import 'package:united_areechola/constants.dart';
 
 UserDataModel? userDataModel;
@@ -17,6 +18,15 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  void getSubcriptionAmount() async {
+    final data = await db.collection('settings').doc('settings').get();
+    if (data.exists && mounted) {
+      setState(() {
+        subcriptionAmount = data['subcriptionamount'].toDouble() ?? 0;
+      });
+    }
+  }
+
   checkUser() async {
     try {
       Future.delayed(const Duration(seconds: 2)).then((value) async {
@@ -35,7 +45,6 @@ class _SplashScreenState extends State<SplashScreen> {
                   isAdmin = userDataModel?.role == "admin";
                 });
               }
-             
             }
             if (mounted) {
               Navigator.pushAndRemoveUntil(
@@ -61,11 +70,14 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     checkUser();
+    getSubcriptionAmount();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    scrwidth = MediaQuery.of(context).size.width;
+    scrHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       body: Center(
         child: Column(

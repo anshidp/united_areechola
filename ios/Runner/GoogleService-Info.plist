@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>1016786265689-71dkln8ckjirfr7es36jqp73588b8p2d.apps.googleusercontent.com</string>
+	<string>1016786265689-iba9cj8oujkb160cbajrk0dsai6t9if8.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.1016786265689-71dkln8ckjirfr7es36jqp73588b8p2d</string>
+	<string>com.googleusercontent.apps.1016786265689-iba9cj8oujkb160cbajrk0dsai6t9if8</string>
 	<key>ANDROID_CLIENT_ID</key>
-	<string>1016786265689-qd8qlua494ap05pdl71bnbglivff98pa.apps.googleusercontent.com</string>
+	<string>1016786265689-f816h4lbg97fidd8ibdpuv4gsvmhd9h6.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
 	<string>AIzaSyCKIyiAWBeTMUGJfSlXe0oft9UARSF-AlU</string>
 	<key>GCM_SENDER_ID</key>
@@ -15,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.unitedAreechola</string>
+	<string>com.unitedAreechola</string>
 	<key>PROJECT_ID</key>
 	<string>unitedareechola</string>
 	<key>STORAGE_BUCKET</key>
@@ -31,7 +31,7 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:1016786265689:ios:02b31e396aab5b669c7348</string>
+	<string>1:1016786265689:ios:228e2f79c6edc4cd9c7348</string>
 	<key>DATABASE_URL</key>
 	<string>https://unitedareechola-default-rtdb.firebaseio.com</string>
 </dict>

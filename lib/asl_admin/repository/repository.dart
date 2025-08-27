@@ -1,35 +1,44 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:united_areechola/asl_admin/model/goal_model.dart';
+import 'package:united_areechola/asl_admin/model/manager_model.dart';
 import 'package:united_areechola/asl_admin/model/match_model.dart';
 import 'package:united_areechola/asl_admin/model/player_model.dart';
 import 'package:united_areechola/asl_admin/model/season_model.dart';
 import 'package:united_areechola/asl_admin/model/team_model.dart';
 import 'package:united_areechola/asl_admin/screens/add_matches.dart';
 import 'package:united_areechola/common/common.dart';
+import 'package:united_areechola/utils/constants.dart';
 
 final aslRepositoryProvider = Provider((ref) => AslAdminRepository());
 
-enum PlayerTypes { goals, assist, yellow, red }
+enum PlayerTypes { goals, assist, yellow, red , penalty}
 
 abstract class AslAdminRepo {
-  Future<void> addNewPlayer(PlayerModel playerModel);
+  Future<void> addNewPlayer(PlayerModel playerModel, String season);
   Future<void> addNewMatch(MatchModel matchmodel, String seasonId);
   Future<void> addNewSeason(SeasonModel seasonModel);
-  Future<void> updatePlayer(String playerId, PlayerModel playerModel);
+  Future<void> addNewManager(ManagerModel managermodel, String season);
+  Future<void> updatePlayer(
+      String playerId, PlayerModel playerModel, String season);
   Future<String> addAslTeam(AslTeamModel teamModel, String seasonId);
   Future<Map<String, dynamic>> getPlayers();
   Future<Map<String, dynamic>> getTeams(String seasonId);
-  Future<List<PlayerModel>> getTeamPlayers(String teamA, String teamB);
-  void updatePlayerStat(
-      {required String playerId,
-      required String type,
-      required String matchId,
-      required String selectTeam,
-      required String teamA,
-      required String assister,
-      required String seasonId,
-      required String teamB});
+  Future<List<PlayerModel>> getTeamPlayers(
+      String teamA, String teamB, String seasonId);
+  void updatePlayerStat({
+    required String playerId,
+    required String type,
+    required String matchId,
+    required String selectTeam,
+    required String teamA,
+    required String assister,
+    required String seasonId,
+    required String teamB,
+    required String playerName,
+    required bool isPenaltyGoal
+  });
   void updateMatchStat(
       {required String matchId,
       required String teamA,
@@ -42,14 +51,21 @@ abstract class AslAdminRepo {
       required String winner,
       required double w,
       required double h});
-  Future<List<PlayerModel>> getSpecificTeamPlayers({required String teamId});
+  Future<List<PlayerModel>> getSpecificTeamPlayers(
+      {required String teamId, required String seasonId});
+  Future<List<GoalModel>> getgoalByteam(
+      {required String matchId, required String team, required String season});
 }
 
 class AslAdminRepository implements AslAdminRepo {
   @override
-  Future<void> addNewPlayer(PlayerModel playerModel) async {
+  Future<void> addNewPlayer(PlayerModel playerModel, String season) async {
     try {
-      final playerSnap = FirebaseFirestore.instance.collection("players").doc();
+      final playerSnap = FirebaseFirestore.instance
+          .collection("seasons")
+          .doc(season)
+          .collection("players")
+          .doc();
       playerModel.playerId = playerSnap.id;
       playerModel.reference = playerSnap;
       playerSnap.set(playerModel.toMap());
@@ -60,15 +76,40 @@ class AslAdminRepository implements AslAdminRepo {
 
   @override
   Future<Map<String, PlayerModel>> getPlayers() async {
+    print("player work");
     try {
       Map<String, PlayerModel> players = {};
       final playersSnap =
           await FirebaseFirestore.instance.collection("players").get();
+
       if (playersSnap.docs.isNotEmpty) {
         for (var player in playersSnap.docs) {
           players[player.id] = PlayerModel.fromMap(player.data());
         }
         return players;
+      }
+      return {};
+    } catch (e) {
+      debugPrint(e.toString());
+      return {};
+    }
+  }
+
+  Future<Map<String, ManagerModel>> getManagers(
+      {required String season}) async {
+    try {
+      Map<String, ManagerModel> managers = {};
+      final managerSnap = await FirebaseFirestore.instance
+          .collection("seasons")
+          .doc(season)
+          .collection("managers")
+          .get();
+
+      if (managerSnap.docs.isNotEmpty) {
+        for (var manager in managerSnap.docs) {
+          managers[manager.id] = ManagerModel.fromMap(manager.data());
+        }
+        return managers;
       }
       return {};
     } catch (e) {
@@ -154,11 +195,29 @@ class AslAdminRepository implements AslAdminRepo {
   }
 
   @override
-  Future<void> updatePlayer(String playerId, PlayerModel playerModel) async {
+  Future<void> updatePlayer(
+      String playerId, PlayerModel playerModel, String season) async {
     try {
-      final stafSnapshot =
-          FirebaseFirestore.instance.collection("players").doc(playerId);
-      stafSnapshot.update(playerModel.toMap());
+      final playerSnapshot = FirebaseFirestore.instance
+          .collection(FirebaseConstants.seasonCollection)
+          .doc(season)
+          .collection(FirebaseConstants.playerCollection)
+          .doc(playerId);
+      playerSnapshot.update(playerModel.toMap());
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> updateTeam(
+      String teamId, AslTeamModel teamModel, String season) async {
+    try {
+      final teamSnapshot = FirebaseFirestore.instance
+          .collection(FirebaseConstants.seasonCollection)
+          .doc(season)
+          .collection(FirebaseConstants.teamCollection)
+          .doc(teamId);
+      teamSnapshot.update(teamModel.toMap());
     } catch (e) {
       debugPrint(e.toString());
     }
@@ -192,15 +251,22 @@ class AslAdminRepository implements AslAdminRepo {
   }
 
   @override
-  Future<List<PlayerModel>> getTeamPlayers(String teamA, String teamB) async {
+  Future<List<PlayerModel>> getTeamPlayers(
+      String teamA, String teamB, String seasonId) async {
     try {
+      print("teamA: $teamA");
+      print("teamB: $teamB");
       List<PlayerModel> playersList = [];
       final teamAsnap = await FirebaseFirestore.instance
+          .collection(FirebaseConstants.seasonCollection)
+          .doc(seasonId)
           .collection('players')
           .where('teamId', isEqualTo: teamA)
           .get();
 
       final teamBsnap = await FirebaseFirestore.instance
+          .collection(FirebaseConstants.seasonCollection)
+          .doc(seasonId)
           .collection('players')
           .where('teamId', isEqualTo: teamB)
           .get();
@@ -213,6 +279,7 @@ class AslAdminRepository implements AslAdminRepo {
           (e) => PlayerModel.fromMap(e.data()),
         ),
       ];
+      print("teamPlayersList: $playersList");
       return playersList;
     } catch (e, s) {
       debugPrint(s.toString());
@@ -222,21 +289,32 @@ class AslAdminRepository implements AslAdminRepo {
   }
 
   @override
-  void updatePlayerStat(
-      {required String playerId,
-      required String type,
-      required String matchId,
-      required String selectTeam,
-      required String seasonId,
-      required String assister,
-      required String teamA,
-      required String teamB}) async {
+  void updatePlayerStat({
+    required String playerId,
+    required String type,
+    required String matchId,
+    required String selectTeam,
+    required String seasonId,
+    required String assister,
+    required String teamA,
+    required String teamB,
+    required String playerName,
+    required bool isPenaltyGoal
+  }) async {
     try {
+      final goalRef = FirebaseFirestore.instance
+          .collection(FirebaseConstants.seasonCollection)
+          .doc(seasonId)
+          .collection('matches')
+          .doc(matchId)
+          .collection(FirebaseConstants.goalCollection)
+          .doc();
       final matchRef = FirebaseFirestore.instance
-          .collection('seasons')
+          .collection(FirebaseConstants.seasonCollection)
           .doc(seasonId)
           .collection('matches')
           .doc(matchId);
+
       if (type == PlayerTypes.goals.name || type == PlayerTypes.assist.name) {
         if (selectTeam == teamA) {
           matchRef.update({"teamAscore": FieldValue.increment(1)});
@@ -244,17 +322,38 @@ class AslAdminRepository implements AslAdminRepo {
           matchRef.update({"teamBscore": FieldValue.increment(1)});
         }
       }
-      final playerRef =
-          FirebaseFirestore.instance.collection('players').doc(playerId);
-      matchRef.update({
-        'goals': FieldValue.arrayUnion([playerId])
-      });
-      final assisterRef =
-          FirebaseFirestore.instance.collection('players').doc(assister);
+      final playerRef = FirebaseFirestore.instance
+          .collection(FirebaseConstants.seasonCollection)
+          .doc(seasonId)
+          .collection('players')
+          .doc(playerId);
+
+      final goalModel = GoalModel(
+          isPenaltyGoal: isPenaltyGoal,
+          id: goalRef.id,
+          assister: assister,
+          goalTaker: playerId,
+          goalTakerName: playerName,
+          createdDate: DateTime.now(),
+          team: selectTeam);
+
+      goalRef.set(goalModel.toMap());
+
+      DocumentReference<Map<String, dynamic>>? assisterRef;
+      if (type == PlayerTypes.goals.name) {
+        assisterRef = FirebaseFirestore.instance
+            .collection(FirebaseConstants.seasonCollection)
+            .doc(seasonId)
+            .collection('players')
+            .doc(assister);
+      }
+
       switch (type) {
+        case 'penalty':
+          playerRef.update({"statics.goal": FieldValue.increment(1)});
         case 'goals':
           playerRef.update({"statics.goal": FieldValue.increment(1)});
-          assisterRef.update({"statics.assist": FieldValue.increment(1)});
+          assisterRef?.update({"statics.assist": FieldValue.increment(1)});
           break;
         case 'yellow':
           playerRef.update({"statics.yelloCard": FieldValue.increment(1)});
@@ -263,8 +362,9 @@ class AslAdminRepository implements AslAdminRepo {
           playerRef.update({"statics.redCard": FieldValue.increment(1)});
         default:
       }
-    } catch (e) {
+    } catch (e, s) {
       debugPrint(e.toString());
+      // debugPrint(s.toString());
     }
   }
 
@@ -296,7 +396,10 @@ class AslAdminRepository implements AslAdminRepo {
 
       //! player appereance update
       List<String> playersId = [];
-      final playerRef = FirebaseFirestore.instance.collection('players');
+      final playerRef = FirebaseFirestore.instance
+          .collection(FirebaseConstants.seasonCollection)
+          .doc(seasonId)
+          .collection('players');
       final teamAplayerssnap =
           await playerRef.where('teamId', isEqualTo: teamA).get();
       final teamBplayerssnap =
@@ -563,9 +666,11 @@ class AslAdminRepository implements AslAdminRepo {
 
   @override
   Future<List<PlayerModel>> getSpecificTeamPlayers(
-      {required String teamId}) async {
+      {required String teamId, required String seasonId}) async {
     try {
       final playersSnap = await FirebaseFirestore.instance
+          .collection(FirebaseConstants.seasonCollection)
+          .doc(seasonId)
           .collection('players')
           .where('delete', isEqualTo: false)
           .where('teamId', isEqualTo: teamId)
@@ -578,6 +683,41 @@ class AslAdminRepository implements AslAdminRepo {
       return [];
     } catch (e) {
       debugPrint(e.toString());
+    }
+    return [];
+  }
+
+  @override
+  Future<void> addNewManager(ManagerModel managermodel, String season) async {
+    try {
+      final managerSnap = FirebaseFirestore.instance
+          .collection(FirebaseConstants.seasonCollection)
+          .doc(season)
+          .collection("managers")
+          .doc();
+      managermodel.id = managerSnap.id;
+      managerSnap.set(managermodel.toMap());
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  @override
+  Future<List<GoalModel>> getgoalByteam(
+      {required String matchId,
+      required String team,
+      required String season}) async {
+    final doc = await db
+        .collection(FirebaseConstants.seasonCollection)
+        .doc(season)
+        .collection("matches")
+        .doc(matchId)
+        .collection(FirebaseConstants.goalCollection)
+        .where("team", isEqualTo: team)
+        .get();
+
+    if (doc.docs.isNotEmpty) {
+      return doc.docs.map((e) => GoalModel.fromMap(e.data())).toList();
     }
     return [];
   }

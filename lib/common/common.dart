@@ -1,12 +1,20 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+late double scrwidth;
+late double scrHeight;
+
+final db = FirebaseFirestore.instance;
+double? subcriptionAmount;
+
 enum MatchStatus { ongoing, fulltime }
 
 class Palette {
   static const primaryColor = Color(0xff0000FF);
+  static const Color textColor = Color(0xFF333333);
   static const secondaryColor = Color(0xff7855FF);
   static const colorSideMenu = Color(0xffA6A6A6);
   static const textColourSidemenu = Color(0xffDEDEDE);
@@ -169,7 +177,7 @@ Widget customTextField(
   return Padding(
     padding: EdgeInsets.only(bottom: 10),
     child: TextFormField(
-      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
       keyboardType: inputtype,
       validator: validator,
       autovalidateMode: AutovalidateMode.onUserInteraction,

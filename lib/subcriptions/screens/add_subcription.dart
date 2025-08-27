@@ -2,9 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dropdown_textfield/dropdown_textfield.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:united_areechola/Models/notification_model.dart';
 import 'package:united_areechola/Models/subcription_model.dart';
 import 'package:united_areechola/authentication/screens/splash_screen.dart';
 import 'package:united_areechola/common/common.dart';
@@ -18,9 +19,63 @@ class AddSubcription extends ConsumerStatefulWidget {
   ConsumerState<AddSubcription> createState() => _AddSubcriptionState();
 }
 
-class _AddSubcriptionState extends ConsumerState<AddSubcription> {
-  int monthlysubcriptionAmount = 50;
+class _AddSubcriptionState extends ConsumerState<AddSubcription>
+    with TickerProviderStateMixin {
   DateTime? subcriptionStartDate;
+  final amountController = TextEditingController();
+  String selectedMonth = DateFormat('yyyy-MM').format(DateTime.now());
+  int unpaidUsers = 0;
+
+  late AnimationController _animationController;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+
+  List<User> userslist = [];
+  Map<String, dynamic> users = {};
+  List<int> monthlyList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+  final dropdownController = TextEditingController();
+  final dropdownselectedItem = StateProvider<String?>((ref) => "");
+  final dropdownselectedUsername = StateProvider<String?>((ref) => "");
+  final dropdownselectedMonth = StateProvider<int?>((ref) => null);
+  final addeventbool = StateProvider<bool>((ref) => false);
+
+  Map<String, double> subcriptionamount = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    // _slideAnimation = Tween<double>(
+    //   begin: 0.3,
+    //   end: 0.0,
+    // ).animate(CurvedAnimation(
+    //   parent: _animationController,
+    //   curve: Curves.easeOutBack,
+    // ));
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
+    getUsers();
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   void duplicate() async {
     final members =
         await FirebaseFirestore.instance.collection("subcriptionMembers").get();
@@ -29,11 +84,6 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription> {
       await users.add(user.data());
     }
   }
-
-  final amountController = TextEditingController();
-
-  String selectedMonth = DateFormat('yyyy-MM').format(DateTime.now());
-  int unpaidUsers = 0;
 
   Future<String> _fetchUser(String userId) async {
     var userSnapshot = await FirebaseFirestore.instance
@@ -47,9 +97,6 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription> {
     }
   }
 
-  List<User> userslist = [];
-  Map<String, dynamic> users = {};
-  List<int> monthlyList = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   getUsers() async {
     try {
       final data = await FirebaseFirestore.instance
@@ -59,7 +106,6 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription> {
         for (var i in data.docs) {
           users[i.id] = i["name"];
         }
-
         setState(() {});
       }
     } catch (e) {
@@ -71,7 +117,6 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription> {
     if (newMonth != null) {
       setState(() {
         selectedMonth = newMonth;
-        print("selectedmonth: $selectedMonth");
       });
     }
   }
@@ -86,721 +131,1025 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription> {
     return months.reversed.toList();
   }
 
-  final dropdownController = TextEditingController();
-  final dropdownselectedItem = StateProvider<String?>((ref) => "");
-  final dropdownselectedUsername = StateProvider<String?>((ref) => "");
-  final dropdownselectedMonth = StateProvider<int?>((ref) => null);
-
-  final addeventbool = StateProvider<bool>((ref) => false);
-
-  Map<String, double> subcriptionamount = {};
-
-  @override
-  void initState() {
-    getUsers();
-    //duplicate();
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
-    double scrWidth = MediaQuery.of(context).size.width;
-    double scrHeight = MediaQuery.of(context).size.height;
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.width > 600;
     var addevent = ref.watch(addeventbool);
+
     return Scaffold(
-      appBar: AppBar(automaticallyImplyLeading: false),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 35),
-        child: SingleChildScrollView(
-          child: Column(
+      backgroundColor: Colors.grey[50],
+      body: AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, child) {
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                    height: 30,
+                  ),
+                  // Header Title
+                  _buildPageHeader(),
+                  const SizedBox(height: 24),
+
+                  // Stats Cards
+                  _buildStatsSection(),
+                  const SizedBox(height: 24),
+
+                  // Add Subscription Form or Button
+                  _buildSubscriptionForm(addevent, isTablet),
+                  const SizedBox(height: 24),
+
+                  // Month Selector and Unpaid Users
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _buildUnpaidUsersSection(size)),
+                      const SizedBox(width: 20),
+                      _buildMonthSelector(),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Transactions Table
+                  _buildTransactionsTable(),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPageHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Manage Subscriptions",
+          style: GoogleFonts.inter(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: Colors.grey[800],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Track payments, manage users, and monitor subscription data",
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsSection() {
+    return FutureBuilder(
+      future: ref
+          .read(subcriptionrepositoryprovider)
+          .getEachMonthSubscriptionAmount(selectMonth: selectedMonth),
+      builder: (context, transactionamount) {
+        if (transactionamount.connectionState == ConnectionState.waiting) {
+          return _buildStatsLoading();
+        }
+        if (!transactionamount.hasData) {
+          return _buildNoDataCard();
+        }
+
+        return Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                title: "This Month",
+                value: "₹${transactionamount.data?["thisMonth"] ?? 0}",
+                icon: Icons.calendar_month,
+                color: Colors.blue,
+                isLoading: false,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildStatCard(
+                title: "Total Amount",
+                value: "₹${transactionamount.data?["total"] ?? 0}",
+                icon: Icons.account_balance_wallet,
+                color: Colors.green,
+                isLoading: false,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStatsLoading() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
+            title: "This Month",
+            value: "Loading...",
+            icon: Icons.calendar_month,
+            color: Colors.blue,
+            isLoading: true,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildStatCard(
+            title: "Total Amount",
+            value: "Loading...",
+            icon: Icons.account_balance_wallet,
+            color: Colors.green,
+            isLoading: true,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required bool isLoading,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withOpacity(0.8),
+            color,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              FutureBuilder(
-                  future: ref
-                      .read(subcriptionrepositoryprovider)
-                      .getEachMonthsubcriptionAmount(
-                          selectMonth: selectedMonth),
-                  builder: (context, transactionamount) {
-                    if (transactionamount.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Center(child: Text(''));
-                    }
-                    if (!transactionamount.hasData) {
-                      return const Text(
-                        "No data ",
-                        style: TextStyle(
-                            fontFamily: "Inter",
-                            fontStyle: FontStyle.normal,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12),
-                      );
-                    }
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            //width: scrWidth * 0.34,
-                            height: scrHeight * 0.1,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Text(
-                                  "This Month".toUpperCase(),
-                                  style: TextStyle(
-                                    fontFamily: "Inter",
-                                    fontSize: 15,
-                                    color: primarycolor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  "₹${transactionamount.data?["thisMonth"]}",
-                                  style: TextStyle(
-                                    fontFamily: "Inter",
-                                    fontSize: 15,
-                                    color: primarycolor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            width: scrWidth * 0.4,
-                            height: scrHeight * 0.1,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Text(
-                                  "Total Amount".toUpperCase(),
-                                  style: TextStyle(
-                                    fontFamily: "Inter",
-                                    fontSize: 15,
-                                    color: primarycolor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  "₹${transactionamount.data?["total"]}",
-                                  style: TextStyle(
-                                    fontFamily: "Inter",
-                                    fontSize: 15,
-                                    color: primarycolor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  }),
-              addevent == true
-                  ? Column(
-                      spacing: 20,
-                      children: [
-                        SizedBox(),
-                        SizedBox(
-                            height: 47,
-                            width: scrWidth * 0.4,
-                            child: DropDownTextField(
-                              listTextStyle: TextStyle(
-                                fontSize: 13,
-                                fontFamily: "PublicSans",
-                                color: Colors.black,
-                              ),
-                              searchTextStyle: TextStyle(
-                                fontSize: 13,
-                                fontFamily: "PublicSans",
-                                color: Colors.black,
-                              ),
-                              textStyle: TextStyle(
-                                fontSize: 13,
-                                fontFamily: "PublicSans",
-                                color: Colors.black,
-                              ),
-                              clearOption: false,
-                              enableSearch: true,
-
-                              //dropdownColor: textFormFieldFillColor,
-                              dropDownList: users.entries
-                                  .map((e) => DropDownValueModel(
-                                      name: e.value, value: e.key))
-                                  .toList(),
-                              onChanged: (value) {
-                                ref.read(dropdownselectedItem.notifier).state =
-                                    value.value;
-
-                                ref
-                                    .read(dropdownselectedUsername.notifier)
-                                    .state = value.name;
-                              },
-                              // textFieldFocusNode: stateFocus,
-                              textFieldDecoration: InputDecoration(
-                                enabled: true,
-                                hintText: 'Select user',
-                                hintStyle: const TextStyle(
-                                    fontSize: 13,
-                                    fontFamily: "PublicSans",
-                                    color: Color(0xff959FA2)),
-
-                                // fillColor: textFormFieldFillColor,
-                                border: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: Color(0xff959FA2),
-                                  ),
-                                  borderRadius:
-                                      BorderRadius.circular(scrWidth * 0.001),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: Color(0xff959FA2),
-                                  ),
-                                  borderRadius:
-                                      BorderRadius.circular(scrWidth * 0.001),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide:
-                                      BorderSide(color: Color(0xff959FA2)),
-                                  borderRadius:
-                                      BorderRadius.circular(scrWidth * 0.001),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide:
-                                      BorderSide(color: Color(0xff959FA2)),
-                                  borderRadius:
-                                      BorderRadius.circular(scrWidth * 0.001),
-                                ),
-                                disabledBorder: OutlineInputBorder(
-                                  borderSide:
-                                      BorderSide(color: Color(0xff959FA2)),
-                                  borderRadius:
-                                      BorderRadius.circular(scrWidth * 0.001),
-                                ),
-                              ),
-                            )),
-                        SizedBox(
-                          height: 47,
-                          width: scrWidth * 0.4,
-                          child: DropdownMenu(
-                              enableSearch: true,
-                              inputDecorationTheme: const InputDecorationTheme(
-                                  focusedBorder: OutlineInputBorder(
-                                      borderSide:
-                                          BorderSide(color: Colors.black)),
-                                  border: OutlineInputBorder(
-                                      borderSide:
-                                          BorderSide(color: Colors.black)),
-                                  focusColor: Colors.white,
-                                  fillColor: Colors.white,
-                                  filled: true),
-                              menuStyle: const MenuStyle(
-                                  surfaceTintColor:
-                                      WidgetStatePropertyAll(Colors.white),
-                                  backgroundColor:
-                                      WidgetStatePropertyAll(Colors.white)),
-                              width: scrWidth * 0.7,
-                              hintText: "Select month",
-                              textStyle: const TextStyle(
-                                  fontFamily: "Inter", fontSize: 13),
-                              enableFilter: true,
-                              onSelected: (value) {
-                                ref.read(dropdownselectedMonth.notifier).state =
-                                    value;
-
-                                setState(() {
-                                  int calculatedamount = (ref
-                                              .read(dropdownselectedMonth
-                                                  .notifier)
-                                              .state ??
-                                          0) *
-                                      monthlysubcriptionAmount;
-                                  amountController.text =
-                                      calculatedamount.toString();
-                                });
-                                // ref.read(dropdownselectedItem.notifier).state =
-                                //     value;
-                              },
-                              dropdownMenuEntries: monthlyList.map((e) {
-                                return DropdownMenuEntry(
-                                    value: e, label: e.toString());
-                              }).toList()),
-                        ),
-                        SizedBox(
-                            width: scrWidth * 0.4,
-                            child: TextFormField(
-                              readOnly: true,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly
-                              ],
-                              controller: amountController,
-                              decoration: const InputDecoration(
-                                  focusedBorder: OutlineInputBorder(
-                                      borderSide:
-                                          BorderSide(color: Colors.black)),
-                                  hintText: "Amount",
-                                  hintStyle: TextStyle(
-                                      fontFamily: "Inter", fontSize: 12),
-                                  border: OutlineInputBorder(
-                                      borderSide:
-                                          BorderSide(color: Colors.black)),
-                                  filled: true,
-                                  fillColor: Colors.white),
-                            )),
-                        // eventformfield(),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            addButton(
-                                onTap: () async {
-                                  if ((ref
-                                              .read(
-                                                  dropdownselectedItem.notifier)
-                                              .state ??
-                                          "")
-                                      .isEmpty) {
-                                    return showSnackBarMsg(context,
-                                        "Please choose a user", Colors.red);
-                                  } else if (ref
-                                          .read(dropdownselectedMonth.notifier)
-                                          .state ==
-                                      null) {
-                                    return showSnackBarMsg(context,
-                                        "Please choose a month", Colors.red);
-                                  }
-                                  bool confirm = await addDialog(
-                                      context, "Do you want add subcription?");
-
-                                  if (confirm) {
-                                    SubcriptionModel subcription = SubcriptionModel(
-                                        month: ref.read(dropdownselectedMonth),
-                                        startDate:
-                                            DateTime.parse("$selectedMonth-01"),
-                                        status: 0,
-                                        createdDate: DateTime.now(),
-                                        delete: false,
-                                        amount: double.tryParse(
-                                            amountController.text),
-                                        userId: ref.read(dropdownselectedItem),
-                                        expireDate: DateTime.parse(
-                                                "$selectedMonth-01")
-                                            .add(Duration(
-                                                days: (ref
-                                                            .read(
-                                                                dropdownselectedMonth
-                                                                    .notifier)
-                                                            .state ??
-                                                        0) *
-                                                    30)));
-                                    ref
-                                        .read(subcriptionrepositoryprovider)
-                                        .addsubcription(
-                                            subcriptionModel: subcription);
-
-                                    showSnackBarMsg(
-                                        context,
-                                        "subcription added successfull",
-                                        Colors.green);
-
-                                    amountController.clear();
-                                    ref
-                                        .watch(dropdownselectedItem.notifier)
-                                        .state = null;
-                                    ref
-                                        .watch(dropdownselectedMonth.notifier)
-                                        .state = null;
-                                  }
-
-                                  ref.watch(addeventbool.notifier).state =
-                                      !ref.watch(addeventbool.notifier).state;
-                                },
-                                title: 'Add Subcription'),
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            addButton(
-                                onTap: () {
-                                  ref.read(addeventbool.notifier).state =
-                                      !addevent;
-                                },
-                                title: 'Cancel'),
-                          ],
-                        ),
-                      ],
-                    )
-                  : const SizedBox(),
-              (addevent == false && isAdmin)
-                  ? Consumer(builder: (context, ref, child) {
-                      return Align(
-                        alignment: Alignment.topRight,
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                              right: scrWidth * 0.06,
-                              top: scrWidth * 0.02,
-                              bottom: scrWidth * 0.02),
-                          child: SizedBox(
-                            width: MediaQuery.of(context).size.width >= 600
-                                ? scrWidth * 0.16
-                                : scrWidth * 0.4,
-                            height: scrHeight * 0.054,
-                            child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(5)),
-                                    backgroundColor: MyColors.primaryColor),
-                                onPressed: () {
-                                  //admin add bool
-                                  ref.read(addeventbool.notifier).state =
-                                      !addevent;
-                                },
-                                child: Text(
-                                  "Add Subcription",
-                                  style: TextStyle(
-                                      fontSize: scrWidth >= 600
-                                          ? scrWidth * 0.009
-                                          : scrWidth * 0.03,
-                                      fontFamily: "Inter",
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold),
-                                )),
-                          ),
-                        ),
-                      );
-                    })
-                  : const SizedBox(),
-              const SizedBox(
-                height: 20,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: Colors.white, size: 20),
               ),
-              SizedBox(
-                width: scrWidth * 0.5,
-                height: scrHeight * 0.3,
-                child: FutureBuilder(
-                    future: ref
-                        .read(subcriptionrepositoryprovider)
-                        .getunpaidUsers(selectedMonth),
-                    builder: (context, unpaidusers) {
-                      if (unpaidusers.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Center(child: Text(''));
-                      }
-                      if (!unpaidusers.hasData) {
-                        return const Text(
-                          "No data ",
-                          style: TextStyle(
-                              fontFamily: "Inter",
-                              fontStyle: FontStyle.normal,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12),
-                        );
-                      }
-                      unpaidUsers = (unpaidusers.data?.length ?? 0);
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Unpaid Users: $unpaidUsers",
-                              style: const TextStyle(
-                                  fontFamily: "Inter",
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15),
-                            ),
-                            SizedBox(
-                              height: scrHeight * 0.03,
-                            ),
-                            Expanded(
-                              child: ListView.builder(
-                                  itemCount: unpaidusers.data?.length,
-                                  itemBuilder: (context, index) {
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            const CircleAvatar(
-                                              backgroundColor:
-                                                  Color(0xffDA4D4A),
-                                              radius: 4,
-                                            ),
-                                            const SizedBox(
-                                              width: 20,
-                                            ),
-                                            ConstrainedBox(
-                                              constraints: BoxConstraints(maxWidth: scrWidth*0.35),
-                                              child: Text(
-                                                '${unpaidusers.data?[index].toUpperCase()}',
-                                                style: const TextStyle(
-                                                    fontFamily: "Inter",
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w500),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                        const SizedBox(
-                                          height: 5,
-                                        )
-                                      ],
-                                    );
-                                  }),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
+              if (isLoading)
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.9),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoDataCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(Icons.info_outline, color: Colors.grey[400], size: 48),
+            const SizedBox(height: 16),
+            Text(
+              "No subscription data available",
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
               ),
-              Align(
-                alignment: Alignment.topRight,
-                child: Container(
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubscriptionForm(bool addevent, bool isTablet) {
+    if (addevent) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
                   padding: const EdgeInsets.all(8),
-                  width: 150,
-                  height: 50,
                   decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.grey.shade500,
-                      )),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: selectedMonth,
-                      onChanged: _updateSelectedMonth,
-                      items: _generateMonthList()
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(
-                            value,
-                            style: const TextStyle(
-                                fontFamily: "Inter",
-                                fontSize: 13,
-                                color: Colors.black),
-                          ),
-                        );
-                      }).toList(),
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child:
+                      Icon(Icons.person_add, color: Colors.blue[600], size: 20),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  "Add New Subscription",
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // User Selection Dropdown
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Select User",
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: DropDownTextField(
+                    listTextStyle: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                    searchTextStyle: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                    textStyle: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                    clearOption: false,
+                    enableSearch: true,
+                    dropDownList: users.entries
+                        .map((e) =>
+                            DropDownValueModel(name: e.value, value: e.key))
+                        .toList(),
+                    onChanged: (value) {
+                      ref.read(dropdownselectedItem.notifier).state =
+                          value.value;
+                      ref.read(dropdownselectedUsername.notifier).state =
+                          value.name;
+                    },
+                    textFieldDecoration: InputDecoration(
+                      hintText: 'Search and select user...',
+                      hintStyle: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: Colors.grey[500],
+                      ),
+                      prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.all(16),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-              StreamBuilder(
-                  stream: ref
-                      .read(subcriptionrepositoryprovider)
-                      .getSubcriptionTransactions(selectedMonth: selectedMonth),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return const Center(
-                          child: Text(
-                        "No Data Found",
-                        style: TextStyle(fontFamily: "Inter", fontSize: 13),
-                      ));
-                    }
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: Text(''));
-                    }
-                    return LayoutBuilder(builder: (context, constrains) {
-                      return SizedBox(
-                        // width: 400,
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
-                            headingTextStyle:
-                                const TextStyle(fontWeight: FontWeight.bold),
-                            dataTextStyle: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                            ),
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10)),
-                            border: TableBorder.all(
-                                borderRadius: BorderRadius.circular(8),
-                                color: Color.fromARGB(255, 211, 192, 192)),
-                            headingRowColor:
-                                const WidgetStatePropertyAll(Color(0xffF4F4F4)),
-                            columns: kIsWeb
-                                ? const [
-                                    DataColumn(
-                                        label: Text(
-                                      "No",
-                                      style: TextStyle(
-                                          fontFamily: "Inter",
-                                          fontSize: 12,
-                                          color: Colors.black),
-                                    )),
-                                    DataColumn(
-                                        label: Text("Name",
-                                            style: TextStyle(
-                                                fontFamily: "Inter",
-                                                fontSize: 12,
-                                                color: Colors.black))),
-                                    DataColumn(
-                                        label: Text("Amount",
-                                            style: TextStyle(
-                                                fontFamily: "Inter",
-                                                fontSize: 12,
-                                                color: Colors.black))),
-                                    DataColumn(
-                                        label: Text("Date",
-                                            style: TextStyle(
-                                                fontFamily: "Inter",
-                                                fontSize: 12,
-                                                color: Colors.black))),
-                                    DataColumn(
-                                        label: Text("Status",
-                                            style: TextStyle(
-                                                fontFamily: "Inter",
-                                                fontSize: 12,
-                                                color: Colors.black))),
-                                    DataColumn(
-                                        label: Text("Delete",
-                                            style: TextStyle(
-                                                fontFamily: "Inter",
-                                                fontSize: 12,
-                                                color: Colors.black))),
-                                  ]
-                                : [
-                                    const DataColumn(
-                                        label: Text(
-                                      "No",
-                                      style: TextStyle(
-                                          fontFamily: "Inter",
-                                          fontSize: 12,
-                                          color: Colors.black),
-                                    )),
-                                    const DataColumn(
-                                        label: Text("Name",
-                                            style: TextStyle(
-                                                fontFamily: "Inter",
-                                                fontSize: 12,
-                                                color: Colors.black))),
-                                    const DataColumn(
-                                        label: Text("Amount",
-                                            style: TextStyle(
-                                                fontFamily: "Inter",
-                                                fontSize: 12,
-                                                color: Colors.black))),
-                                    if (isAdmin)
-                                      DataColumn(
-                                          label: Text("Delete",
-                                              style: TextStyle(
-                                                  fontFamily: "Inter",
-                                                  fontSize: 12,
-                                                  color: Colors.black))),
-                                  ],
-                            rows: List.generate((snapshot.data ?? []).length,
-                                (index) {
-                              final data = snapshot.data?[index];
-                              return DataRow(
-                                  color: const WidgetStatePropertyAll(
-                                      Color(0xffFFFFFF)),
-                                  cells: [
-                                    DataCell(Text("${index + 1}",
-                                        style: const TextStyle(
-                                            fontFamily: "Inter",
-                                            fontSize: 13,
-                                            color: Colors.black))),
-                                    DataCell(FutureBuilder(
-                                        future: _fetchUser(data?.userId ?? ""),
-                                        builder: (context, username) {
-                                          return Text(username.data?.toUpperCase() ?? "",
-                                              style: const TextStyle(
-                                                  fontFamily: "Inter",
-                                                  fontSize: 13,
-                                                  color: Colors.black));
-                                        })),
-                                    DataCell(Text((() {
-                                      final amount = data?.amount ?? 0;
-                                      final month = data?.month ?? 0;
-                                      if (month == 0) return "0";
-                                      return (amount / month)
-                                          .toInt()
-                                          .toString();
-                                    })(),
-                                        style: const TextStyle(
-                                            fontFamily: "Inter",
-                                            fontSize: 12,
-                                            color: Colors.black))),
-                                    if (kIsWeb)
-                                      DataCell(Text(
-                                          DateFormat("dd-MM-yyyy").format(
-                                              data?.createdDate ??
-                                                  DateTime.now()),
-                                          style: const TextStyle(
-                                              fontFamily: "Inter",
-                                              fontSize: 12,
-                                              color: Colors.black))),
-                                    if (kIsWeb)
-                                      const DataCell(
-                                        Row(
-                                          children: [
-                                            CircleAvatar(
-                                              radius: 5,
-                                              backgroundColor:
-                                                  Color(0xff4CE080),
-                                            ),
-                                            SizedBox(
-                                              width: 10,
-                                            ),
-                                            Text("Active",
-                                                style: TextStyle(
-                                                    fontFamily: "Inter",
-                                                    fontSize: 12,
-                                                    color: Colors.black)),
-                                          ],
-                                        ),
-                                      ),
-                                    if (isAdmin)
-                                      DataCell(IconButton(
-                                        icon: const Icon(Icons.delete_outline),
-                                        onPressed: () async {
-                                          bool delete = await addDialog(context,
-                                              "Do you want to delete the transaction?");
-                                          if (delete) {
-                                            deleteUser(transId: data?.id ?? "");
-                                            if (context.mounted) {
-                                              showSnackBarMsg(
-                                                  context,
-                                                  "Transaction deleted successfully",
-                                                  Colors.red);
-                                            }
-                                          }
-                                        },
-                                      )),
-                                  ]);
-                            }),
-                          ),
-                        ),
-                      );
-                    });
-                  })
-            ],
+              ],
+            ),
+
+            const SizedBox(height: 32),
+
+            // Action Buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                _buildActionButton(
+                  onTap: () {
+                    ref.read(addeventbool.notifier).state = false;
+                  },
+                  title: 'Cancel',
+                  isPrimary: false,
+                ),
+                const SizedBox(width: 16),
+                _buildActionButton(
+                  onTap: () async {
+                    await _handleAddSubscription();
+                  },
+                  title: 'Add Subscription',
+                  isPrimary: true,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    } else if (isAdmin) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: _buildActionButton(
+          onTap: () {
+            ref.read(addeventbool.notifier).state = true;
+          },
+          title: 'Add Subscription',
+          isPrimary: true,
+          icon: Icons.add,
+        ),
+      );
+    }
+    return const SizedBox();
+  }
+
+  Widget _buildActionButton({
+    required Function()? onTap,
+    required String title,
+    required bool isPrimary,
+    IconData? icon,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: isPrimary
+            ? LinearGradient(
+                colors: [Colors.blue[600]!, Colors.blue[800]!],
+              )
+            : null,
+        color: isPrimary ? null : Colors.grey[100],
+        border: isPrimary ? null : Border.all(color: Colors.grey[300]!),
+        boxShadow: isPrimary
+            ? [
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    color: isPrimary ? Colors.white : Colors.grey[700],
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isPrimary ? Colors.white : Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _handleAddSubscription() async {
+    if ((ref.read(dropdownselectedItem) ?? "").isEmpty) {
+      showSnackBarMsg(context, "Please choose a user", Colors.red);
+      return;
+    }
+
+    bool? isAlreadyPaid = await ref
+        .read(subcriptionrepositoryprovider)
+        .isAlreadyPaid(
+            userId: ref.read(dropdownselectedItem) ?? "",
+            paiddate: selectedMonth);
+
+    if (isAlreadyPaid != null && isAlreadyPaid) {
+      showSnackBarMsg(
+          context,
+          "${ref.read(dropdownselectedUsername)} is already paid this month",
+          Colors.red);
+      return;
+    }
+
+    bool confirm = await addDialog(context, "Do you want to add subscription?");
+
+    if (confirm) {
+      SubcriptionModel subcription = SubcriptionModel(
+        startDate: DateTime.parse("$selectedMonth-01"),
+        status: 0,
+        createdDate: DateTime.now(),
+        delete: false,
+        amount: subcriptionAmount,
+        userId: ref.read(dropdownselectedItem),
+      );
+
+      ref
+          .read(subcriptionrepositoryprovider)
+          .addsubcription(subcriptionModel: subcription);
+
+      showSnackBarMsg(context, "Subscription added successfully", Colors.green);
+
+      final username = ref.read(dropdownselectedUsername);
+      final subcriptiondate = DateTime.parse("$selectedMonth-01");
+      String monthName = DateFormat("MMMM").format(subcriptiondate);
+      String yearName = DateFormat("yyyy").format(subcriptiondate);
+
+      final notification = NotificationModel(
+          title: "Subscription Paid",
+          body:
+              "${username?.toUpperCase()} has paid ₹$subcriptionAmount for the $monthName $yearName subscription",
+          createdDate: DateTime.now(),
+          delete: false);
+
+      await ref
+          .read(subcriptionrepositoryprovider)
+          .addNotificationData(notification);
+
+      // Clear form
+      amountController.clear();
+      ref.read(dropdownselectedItem.notifier).state = null;
+      ref.read(dropdownselectedMonth.notifier).state = null;
+      ref.read(addeventbool.notifier).state = false;
+    }
+  }
+
+  Widget _buildUnpaidUsersSection(Size size) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: FutureBuilder(
+        future: ref
+            .read(subcriptionrepositoryprovider)
+            .getUnpaidUsers(selectedMonth),
+        builder: (context, unpaidusers) {
+          if (unpaidusers.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (!unpaidusers.hasData || unpaidusers.data!.isEmpty) {
+            return Column(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  "All users have paid!",
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            );
+          }
+
+          unpaidUsers = unpaidusers.data?.length ?? 0;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child:
+                        Icon(Icons.warning, color: Colors.red[600], size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Unpaid Users",
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      Text(
+                        "$unpaidUsers users pending",
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Colors.red[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                constraints: BoxConstraints(maxHeight: size.height * 0.3),
+                child: ListView.separated(
+                  itemCount: unpaidusers.data?.length ?? 0,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: Colors.red[600],
+                            radius: 4,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              unpaidusers.data?[index].toUpperCase() ?? "",
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMonthSelector() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Select Month",
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: selectedMonth,
+                onChanged: _updateSelectedMonth,
+                icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
+                items: _generateMonthList()
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      DateFormat('MMM yyyy')
+                          .format(DateTime.parse('$value-01')),
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionsTable() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.receipt_long,
+                        color: Colors.green[600], size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    "Transaction History",
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            StreamBuilder(
+              stream: ref
+                  .read(subcriptionrepositoryprovider)
+                  .getSubcriptionTransactions(selectedMonth: selectedMonth),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(Icons.receipt,
+                              color: Colors.grey[400], size: 48),
+                          const SizedBox(height: 16),
+                          Text(
+                            "No transactions found",
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    child: DataTable(
+                      headingTextStyle: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey[800],
+                      ),
+                      dataTextStyle: GoogleFonts.inter(
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                      decoration: const BoxDecoration(
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(16),
+                          bottomRight: Radius.circular(16),
+                        ),
+                      ),
+                      headingRowColor: WidgetStatePropertyAll(Colors.grey[50]),
+                      columns: _buildDataColumns(),
+                      rows: _buildDataRows(snapshot.data!),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<DataColumn> _buildDataColumns() {
+    if (kIsWeb) {
+      return [
+        DataColumn(
+          label: Text("No",
+              style:
+                  GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+        ),
+        DataColumn(
+          label: Text("Name",
+              style:
+                  GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+        ),
+        DataColumn(
+          label: Text("Amount",
+              style:
+                  GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+        ),
+        DataColumn(
+          label: Text("Date",
+              style:
+                  GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+        ),
+        DataColumn(
+          label: Text("Status",
+              style:
+                  GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+        ),
+        if (isAdmin)
+          DataColumn(
+            label: Text("Action",
+                style: GoogleFonts.inter(
+                    fontSize: 12, fontWeight: FontWeight.w600)),
+          ),
+      ];
+    } else {
+      return [
+        DataColumn(
+          label: Text("No",
+              style:
+                  GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+        ),
+        DataColumn(
+          label: Text("Name",
+              style:
+                  GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+        ),
+        DataColumn(
+          label: Text("Amount",
+              style:
+                  GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+        ),
+        if (isAdmin)
+          DataColumn(
+            label: Text("Action",
+                style: GoogleFonts.inter(
+                    fontSize: 12, fontWeight: FontWeight.w600)),
+          ),
+      ];
+    }
+  }
+
+  List<DataRow> _buildDataRows(List<dynamic> data) {
+    return List.generate(data.length, (index) {
+      final transaction = data[index];
+      return DataRow(
+        color: WidgetStatePropertyAll(
+          index % 2 == 0 ? Colors.white : Colors.grey[50],
+        ),
+        cells: [
+          DataCell(
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                "${index + 1}",
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue[700],
+                ),
+              ),
+            ),
+          ),
+          DataCell(
+            FutureBuilder(
+              future: _fetchUser(transaction?.userId ?? ""),
+              builder: (context, username) {
+                return Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: Colors.green[100],
+                      radius: 12,
+                      child: Text(
+                        (username.data?.isNotEmpty == true)
+                            ? username.data![0].toUpperCase()
+                            : "?",
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.green[700],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        username.data?.toUpperCase() ?? "Unknown",
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          DataCell(
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                "₹${transaction?.amount?.toString() ?? '0'}",
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.green[700],
+                ),
+              ),
+            ),
+          ),
+          if (kIsWeb)
+            DataCell(
+              Text(
+                DateFormat("dd MMM yyyy").format(
+                  transaction?.createdDate ?? DateTime.now(),
+                ),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
+          if (kIsWeb)
+            DataCell(
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleAvatar(
+                      radius: 4,
+                      backgroundColor: Colors.green[600],
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Paid",
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (isAdmin)
+            DataCell(
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.delete_outline,
+                      color: Colors.red[600], size: 18),
+                  onPressed: () async {
+                    bool delete = await addDialog(
+                      context,
+                      "Are you sure you want to delete this transaction?",
+                    );
+                    if (delete) {
+                      deleteUser(transId: transaction?.id ?? "");
+                      if (context.mounted) {
+                        showSnackBarMsg(
+                          context,
+                          "Transaction deleted successfully",
+                          Colors.green,
+                        );
+                      }
+                    }
+                  },
+                ),
+              ),
+            ),
+        ],
+      );
+    });
   }
 
   void deleteUser({required String transId}) {
@@ -809,45 +1158,25 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription> {
           .collection("transactions")
           .doc(transId)
           .update({"delete": true});
-    } catch (e) {}
-  }
-
-  Widget addButton({required Function()? onTap, required String title}) {
-    double scrWidth = MediaQuery.of(context).size.width;
-    double scrHeight = MediaQuery.of(context).size.height;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: scrWidth > 600 ? 150 : scrWidth * 0.35,
-        height: scrWidth > 600 ? 50 : scrWidth * 0.12,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(5),
-            color: const Color(0xff003F62)),
-        child: Center(
-          child: Text(
-            title,
-            style: TextStyle(
-                fontSize: scrWidth > 600 ? 13 : scrWidth * 0.032,
-                fontFamily: "Inter",
-                fontWeight: FontWeight.w500,
-                color: Colors.white),
-          ),
-        ),
-      ),
-    );
+    } catch (e) {
+      debugPrint("Error deleting transaction: $e");
+    }
   }
 
   Widget eventformfield() {
-    return SizedBox(
-      height: 47,
-      width: 150,
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
       child: TextFormField(
         onTap: () async {
           final data = await showDatePicker(
-              initialDate: DateTime.now(),
-              context: context,
-              firstDate: DateTime(2024),
-              lastDate: DateTime(2100));
+            initialDate: DateTime.now(),
+            context: context,
+            firstDate: DateTime(2024),
+            lastDate: DateTime(2100),
+          );
           if (data != null) {
             setState(() {
               subcriptionStartDate = data;
@@ -855,36 +1184,38 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription> {
           }
         },
         readOnly: true,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         controller: subcriptionStartDate != null
             ? TextEditingController(
                 text: DateFormat("dd-MM-yyyy").format(subcriptionStartDate!))
             : TextEditingController(),
-        decoration: const InputDecoration(
-            focusedBorder:
-                OutlineInputBorder(borderSide: BorderSide(color: Colors.black)),
-            hintText: "Start Date",
-            hintStyle: TextStyle(fontFamily: "Inter", fontSize: 12),
-            border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(3)),
-                borderSide: BorderSide(color: Colors.black)),
-            filled: true,
-            fillColor: Colors.white),
+        decoration: InputDecoration(
+          hintText: "Start Date",
+          hintStyle: GoogleFonts.inter(
+            fontSize: 14,
+            color: Colors.grey[500],
+          ),
+          prefixIcon: Icon(Icons.calendar_today, color: Colors.grey[400]),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.all(16),
+        ),
       ),
     );
   }
 }
 
+// Keep the existing User and Transaction classes
 class User {
   final String userId;
   final String username;
   final DateTime createdDate;
   final int amount;
-  User(
-      {required this.createdDate,
-      required this.amount,
-      required this.userId,
-      required this.username});
+
+  User({
+    required this.createdDate,
+    required this.amount,
+    required this.userId,
+    required this.username,
+  });
 
   factory User.fromMap(Map<String, dynamic> map, String userId) {
     return User(

@@ -20,7 +20,17 @@ class AddEvents extends ConsumerStatefulWidget {
   ConsumerState<AddEvents> createState() => _AddEventsState();
 }
 
-class _AddEventsState extends ConsumerState<AddEvents> {
+class _AddEventsState extends ConsumerState<AddEvents>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+
+  final addeventbool = StateProvider<bool>((ref) => false);
+  final eventnameController = TextEditingController();
+  final targetamountController = TextEditingController();
+  final discriptionController = TextEditingController();
+
   update() async {
     final data = await FirebaseFirestore.instance.collection("users").get();
     if (data.docs.isNotEmpty) {
@@ -33,13 +43,29 @@ class _AddEventsState extends ConsumerState<AddEvents> {
     }
   }
 
-  final addeventbool = StateProvider<bool>((ref) => false);
-  final eventnameController = TextEditingController();
-  final targetamountController = TextEditingController();
-  final discriptionController = TextEditingController();
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _slideAnimation = Tween<double>(begin: -1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    eventnameController.dispose();
+    targetamountController.dispose();
+    discriptionController.dispose();
+    super.dispose();
   }
 
   @override
@@ -47,476 +73,754 @@ class _AddEventsState extends ConsumerState<AddEvents> {
     var addevent = ref.watch(addeventbool);
     double scrWidth = MediaQuery.of(context).size.width;
     double scrHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 35, horizontal: 30),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              addevent == true
-                  ? Column(
-                      children: [
-                        Text(
-                          "Events",
-                          style: GoogleFonts.poppins(
-                              fontSize: 22, fontWeight: FontWeight.bold),
-                        ),
-                        eventformfield(),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            addButton(
-                                onTap: () async {
-                                  if (eventnameController.text.isEmpty) {
-                                    return showSnackBar(
-                                        context, "Please enter the eventname");
-                                  }
-
-                                  bool confirm = await addDialog(
-                                      context, "Do you want add this event?");
-
-                                  if (confirm) {
-                                    EventModel eventModel = EventModel(
-                                        delete: false,
-                                        discription: discriptionController.text,
-                                        targetamount: double.tryParse(
-                                            targetamountController.text),
-                                        balance: 0,
-                                        income: 0,
-                                        createdDate: DateTime.now(),
-                                        eventname: eventnameController.text,
-                                        users: [],
-                                        expense: 0);
-                                    ref
-                                        .read(eventrepositoryProvider)
-                                        .addEvents(eventModel);
-                                  }
-                                  // showSnackBar(
-                                  //     localcontext, "Event added successfull");
-                                  ref.read(addeventbool.notifier).state =
-                                      !ref.read(addeventbool);
-                                },
-                                title: 'Add Event'),
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            addButton(
-                                onTap: () {
-                                  ref.read(addeventbool.notifier).state =
-                                      !addevent;
-                                },
-                                title: 'Cancel'),
-                          ],
-                        ),
-                      ],
-                    )
-                  : const SizedBox(),
-              (addevent == false && isAdmin)
-                  ? Consumer(builder: (context, ref, child) {
-                      return Align(
-                        alignment: Alignment.topRight,
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                              right: scrWidth * 0.06,
-                              top: scrWidth * 0.06,
-                              bottom: scrWidth * 0.02),
-                          child: SizedBox(
-                            width: MediaQuery.of(context).size.width >= 600
-                                ? scrWidth * 0.16
-                                : scrWidth * 0.35,
-                            height: scrHeight * 0.054,
-                            child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor: MyColors.primaryColor),
-                                onPressed: () {
-                                  //admin add bool
-                                  ref.read(addeventbool.notifier).state =
-                                      !addevent;
-                                },
-                                child: Text(
-                                  "Add Event",
-                                  style: GoogleFonts.poppins(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold),
-                                )),
-                          ),
-                        ),
-                      );
-                    })
-                  : const SizedBox(),
-
-              // Events list
-              Consumer(builder: (context, ref, child) {
-                final eventdata = ref.watch(eventsdatastream);
-
-                return eventdata.when(data: (events) {
-                  return events.isEmpty
-                      ? LottieBuilder.asset(
-                          "assets/Animation - 1717412302389.json",
-                          height: MediaQuery.of(context).size.height * 0.4,
-                        )
-                      : LayoutBuilder(builder: (context, constrains) {
-                          int crossAxisCount;
-                          if (constrains.maxWidth < 600) {
-                            crossAxisCount = 1; // Mobile
-                          } else {
-                            crossAxisCount = 3; // Web/Desktop
-                          }
-
-                          return SizedBox(
-                            width: double.infinity,
-                            child: GridView.builder(
-                                physics: const NeverScrollableScrollPhysics(),
-                                shrinkWrap: true,
-                                itemCount: events.length,
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                        childAspectRatio: kIsWeb ? 1.0 : 1.4,
-                                        //crossAxisSpacing: 14,
-                                        mainAxisSpacing: 14,
-                                        crossAxisCount: crossAxisCount),
-                                itemBuilder: (context, index) {
-                                  final data = events[index];
-
-                                  final createdDate = DateFormat("dd-MM-yyyy")
-                                      .format(data.createdDate!);
-                                  double value = 0;
-                                  double target = data.targetamount ?? 0;
-                                  if (target > 0) {
-                                    value = (data.income ?? 0) / target;
-                                  }
-
-                                  return GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (ctx) =>
-                                                  EventTransactionsScreen(
-                                                    eventModel: data,
-                                                  )));
-                                    },
-                                    child: EventTile(
-                                        eventId: data.eventId ?? "",
-                                        value: value,
-                                        targetAmount: data.targetamount ?? 0,
-                                        eventName: data.eventname ?? "",
-                                        eventdiscription:
-                                            data.discription ?? "",
-                                        income: data.income ?? 0,
-                                        expense: data.expense ?? 0,
-                                        createdDate: createdDate),
-                                  );
-                                }),
-                          );
-                        });
-                }, error: (Object error, StackTrace stackTrace) {
-                  print(stackTrace);
-                  return Text(error.toString());
-                }, loading: () {
-                  return const Center(child: CircularProgressIndicator());
-                });
-              }),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    "Version 1.5",
-                    style: GoogleFonts.caveat(fontSize: 15),
-                  ),
-                ],
-              )
-            ],
-          ),
-        ),
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, child) {
+          return Transform.translate(
+            offset: Offset(_slideAnimation.value * scrWidth, 0),
+            child: Opacity(
+              opacity: _fadeAnimation.value,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: scrWidth > 600 ? 40 : 20,
+                  vertical: 24,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(
+                      height: 30,
+                    ),
+                    _buildHeader(scrWidth, scrHeight, addevent),
+                    if (addevent) ...[
+                      const SizedBox(height: 24),
+                      _buildEventForm(),
+                    ],
+                    const SizedBox(height: 32),
+                    _buildEventsGrid(scrWidth),
+                    const SizedBox(height: 24),
+                    _buildFooter(),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget eventformfield() {
-    return SizedBox(
-      width: 400,
-      height: 300,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Event Name",
-              style: GoogleFonts.poppins(
-                  fontSize: 15, fontWeight: FontWeight.w600),
-            ),
-            const Padding(padding: EdgeInsets.only(top: 10)),
-            Row(
+  Widget _buildHeader(double scrWidth, double scrHeight, bool addevent) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF667EEA).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                    child: TextFormField(
-                  controller: eventnameController,
-                  decoration: InputDecoration(
-                      focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.black)),
-                      hintText: "Event name",
-                      hintStyle: GoogleFonts.poppins(fontSize: 12),
-                      border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(6)),
-                          borderSide: BorderSide(color: Colors.black)),
-                      filled: true,
-                      fillColor: Colors.white),
-                )),
+                Text(
+                  "Event Management",
+                  style: GoogleFonts.poppins(
+                    fontSize: scrWidth > 600 ? 32 : 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Create and manage your events efficiently",
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.9),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(
-              height: 15,
+          ),
+          if (!addevent && isAdmin) _buildAddEventButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddEventButton() {
+    return Consumer(
+      builder: (context, ref, child) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.3)),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                ref.read(addeventbool.notifier).state = true;
+              },
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.add_circle_outline,
+                        color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Add Event",
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            Expanded(
-                child: TextFormField(
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              controller: targetamountController,
-              decoration: InputDecoration(
-                  focusedBorder: const OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black)),
-                  hintText: "Target Amount",
-                  hintStyle: GoogleFonts.poppins(fontSize: 12),
-                  border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(6)),
-                      borderSide: BorderSide(color: Colors.black)),
-                  filled: true,
-                  fillColor: Colors.white),
-            )),
-            const SizedBox(
-              height: 15,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEventForm() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF667EEA).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.event_note,
+                  color: Color(0xFF667EEA),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                "Create New Event",
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildFormField(
+            label: "Event Name",
+            controller: eventnameController,
+            hintText: "Enter event name",
+            icon: Icons.title,
+          ),
+          const SizedBox(height: 20),
+          _buildFormField(
+            label: "Target Amount",
+            controller: targetamountController,
+            hintText: "Enter target amount",
+            icon: Icons.monetization_on,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 20),
+          _buildFormField(
+            label: "Description",
+            controller: discriptionController,
+            hintText: "Enter event description",
+            icon: Icons.description,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 32),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              _buildActionButton(
+                title: 'Cancel',
+                onTap: () {
+                  ref.read(addeventbool.notifier).state = false;
+                  _clearForm();
+                },
+                isSecondary: true,
+              ),
+              const SizedBox(width: 16),
+              _buildActionButton(
+                title: 'Add Event',
+                onTap: () async {
+                  if (eventnameController.text.isEmpty) {
+                    return showSnackBar(context, "Please enter the event name");
+                  }
+
+                  bool confirm = await addDialog(
+                      context, "Do you want to add this event?");
+
+                  if (confirm) {
+                    EventModel eventModel = EventModel(
+                      delete: false,
+                      discription: discriptionController.text,
+                      targetamount:
+                          double.tryParse(targetamountController.text),
+                      balance: 0,
+                      income: 0,
+                      createdDate: DateTime.now(),
+                      eventname: eventnameController.text,
+                      users: [],
+                      expense: 0,
+                    );
+                    ref.read(eventrepositoryProvider).addEvents(eventModel);
+                    _clearForm();
+                  }
+                  ref.read(addeventbool.notifier).state = false;
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormField({
+    required String label,
+    required TextEditingController controller,
+    required String hintText,
+    required IconData icon,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          maxLines: maxLines,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.grey.shade400,
             ),
-            Expanded(
-                child: TextFormField(
-              controller: discriptionController,
-              decoration: InputDecoration(
-                  focusedBorder: const OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black)),
-                  hintText: "Discription",
-                  hintStyle: GoogleFonts.poppins(fontSize: 12),
-                  border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(6)),
-                      borderSide: BorderSide(color: Colors.black)),
-                  filled: true,
-                  fillColor: Colors.white),
-            )),
-            const SizedBox(
-              height: 15,
+            prefixIcon: Icon(icon, color: const Color(0xFF667EEA), size: 20),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
             ),
-          ],
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF667EEA), width: 2),
+            ),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required String title,
+    required VoidCallback onTap,
+    bool isSecondary = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isSecondary
+            ? null
+            : const LinearGradient(
+                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+              ),
+        borderRadius: BorderRadius.circular(12),
+        border: isSecondary ? Border.all(color: Colors.grey.shade300) : null,
+      ),
+      child: Material(
+        color: isSecondary ? Colors.white : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: isSecondary ? Colors.grey.shade700 : Colors.white,
+                fontSize: 14,
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget addButton({required Function()? onTap, required String title}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 100,
-        height: 50,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            color: const Color(0xff003F62)),
-        child: Center(
-          child: Text(
-            title,
-            style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w500, color: Colors.white),
+  Widget _buildEventsGrid(double scrWidth) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final eventdata = ref.watch(eventsdatastream);
+
+        return eventdata.when(
+          data: (events) {
+            if (events.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(40),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    LottieBuilder.asset(
+                      "assets/Animation - 1717412302389.json",
+                      height: 200,
+                    ),
+                    Text(
+                      "No Events Yet",
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Create your first event to get started",
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                int crossAxisCount;
+                if (constraints.maxWidth < 600) {
+                  crossAxisCount = 1;
+                } else if (constraints.maxWidth < 1200) {
+                  crossAxisCount = 2;
+                } else {
+                  crossAxisCount = 3;
+                }
+
+                return GridView.builder(
+                  padding: EdgeInsets.zero,
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: events.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    childAspectRatio: kIsWeb ? 1.1 : 1.3,
+                    crossAxisSpacing: 20,
+                    mainAxisSpacing: 20,
+                    crossAxisCount: crossAxisCount,
+                  ),
+                  itemBuilder: (context, index) {
+                    final data = events[index];
+                    final createdDate =
+                        DateFormat("dd-MM-yyyy").format(data.createdDate!);
+                    double value = 0;
+                    double target = data.targetamount ?? 0;
+                    if (target > 0) {
+                      value = (data.income ?? 0) / target;
+                    }
+
+                    return ModernEventTile(
+                      eventId: data.eventId ?? "",
+                      value: value,
+                      targetAmount: data.targetamount ?? 0,
+                      eventName: data.eventname ?? "",
+                      eventDescription: data.discription ?? "",
+                      income: data.income ?? 0,
+                      expense: data.expense ?? 0,
+                      createdDate: createdDate,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (ctx) => EventTransactionsScreen(
+                              eventModel: data,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+          error: (Object error, StackTrace stackTrace) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.error_outline,
+                      color: Colors.red.shade400, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Error loading events",
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    error.toString(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.red.shade600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          },
+          loading: () => Container(
+            height: 200,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF667EEA)),
+              ),
+            ),
           ),
-        ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Icon(Icons.info_outline, size: 16, color: Colors.grey.shade500),
+          const SizedBox(width: 8),
+          Text(
+            "Version 1.8",
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  void _clearForm() {
+    eventnameController.clear();
+    targetamountController.clear();
+    discriptionController.clear();
   }
 }
 
-class EventTile extends StatelessWidget {
+class ModernEventTile extends StatelessWidget {
   final String eventName;
-  final String eventdiscription;
+  final String eventDescription;
   final double income;
   final double expense;
-  double? targetAmount;
+  final double targetAmount;
   final String createdDate;
   final String eventId;
-  double? value;
-  EventTile({
+  final double value;
+  final VoidCallback onTap;
+
+  const ModernEventTile({
     super.key,
     required this.eventName,
-    required this.eventdiscription,
+    required this.eventDescription,
     required this.income,
     required this.expense,
     required this.eventId,
-    this.value,
-    this.targetAmount,
+    required this.value,
+    required this.targetAmount,
     required this.createdDate,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    double scrWidth = MediaQuery.of(context).size.width;
-    double scrHeight = MediaQuery.of(context).size.height;
     return Container(
-      padding: const EdgeInsets.all(15),
-      margin: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade800)),
-      child: Column(
-        //mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 240),
-                  child: SizedBox(
-                    width: scrWidth > 600 ? 250 : scrWidth * 0.5,
-                    child: Text(
-                      eventName.toUpperCase(),
-                      style: GoogleFonts.inter(
-                          fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-                isAdmin
-                    ? PopupMenuButton<int>(
-                        surfaceTintColor: Colors.black,
-                        shadowColor: Colors.white,
-                        color: Colors.black,
-                        tooltip: "",
-                        icon: const Icon(
-                          Icons.more_vert_rounded,
-                          color: Colors.black,
-                        ),
-                        onSelected: (value) async {
-                          if (value == 1) {
-                            bool delete = await addDialog(
-                                context, "Do you want delete this event?");
-                            if (delete) {
-                              deleteEvent(eventId, context);
-                            }
-                          }
-                        },
-                        itemBuilder: (context) {
-                          return [
-                            const PopupMenuItem(
-                                value: 1,
-                                child: Text(
-                                  "Delete",
-                                  style: TextStyle(
-                                      fontFamily: "Inter",
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500),
-                                ))
-                          ];
-                        })
-                    : const SizedBox()
+                _buildHeader(context),
+                const SizedBox(height: 16),
+                _buildEventName(),
+                const SizedBox(height: 12),
+                _buildFinancialInfo(),
+                const Spacer(),
+                _buildProgressSection(),
               ],
             ),
           ),
-          const Spacer(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Date",
-                style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: const Color(0xffAEAEAE)),
-              ),
-              Text(
-                createdDate,
-                style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: const Color(0xff478F8F)),
-              )
-            ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF667EEA).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Target Amount",
-                style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: const Color(0xffAEAEAE)),
-              ),
-              Text(
-                targetAmount.toString(),
-                style: GoogleFonts.inter(
-                    fontSize: 12, fontWeight: FontWeight.w400),
-              )
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Income",
-                style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: const Color(0xffAEAEAE)),
-              ),
-              Text(
-                income.toString(),
-                style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: const Color(0xffA64658)),
-              )
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Expense",
-                style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: const Color(0xffAEAEAE)),
-              ),
-              Text(
-                expense.toString(),
-                style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.red),
-              )
-            ],
-          ),
-          const SizedBox(
-            height: 10,
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Text(
-              "${((value ?? 0) * 100).toStringAsFixed(1)}%",
-              style: GoogleFonts.inter(
-                  fontSize: 10,
-                  color: primarycolor,
-                  fontWeight: FontWeight.w400),
+          child: Text(
+            createdDate,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF667EEA),
             ),
           ),
-          LinearProgressIndicator(
-            value: value,
-            color: primarycolor,
-            minHeight: 6,
-            borderRadius: BorderRadius.circular(10),
+        ),
+        if (isAdmin)
+          PopupMenuButton<int>(
+            color: Colors.white,
+            surfaceTintColor: Colors.white,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            icon: Icon(
+              Icons.more_vert,
+              color: Colors.grey.shade600,
+              size: 20,
+            ),
+            onSelected: (value) async {
+              if (value == 1) {
+                bool delete = await addDialog(
+                  context,
+                  "Do you want to delete this event?",
+                );
+                if (delete) {
+                  deleteEvent(eventId, context);
+                }
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 1,
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline,
+                        color: Colors.red.shade400, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Delete",
+                      style: GoogleFonts.poppins(
+                        color: Colors.red.shade400,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const Spacer()
-        ],
+      ],
+    );
+  }
+
+  Widget _buildEventName() {
+    return Text(
+      eventName.toUpperCase(),
+      style: GoogleFonts.poppins(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Colors.grey.shade800,
       ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Widget _buildFinancialInfo() {
+    return Column(
+      children: [
+        _buildInfoRow("Target", "₹${targetAmount.toStringAsFixed(0)}",
+            Colors.blue.shade600),
+        const SizedBox(height: 8),
+        _buildInfoRow(
+            "Income", "₹${income.toStringAsFixed(0)}", Colors.green.shade600),
+        const SizedBox(height: 8),
+        _buildInfoRow(
+            "Expense", "₹${expense.toStringAsFixed(0)}", Colors.red.shade600),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, Color valueColor) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade600,
+          ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: valueColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgressSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Progress",
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            Text(
+              "${(value * 100).toStringAsFixed(1)}%",
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF667EEA),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 6,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: FractionallySizedBox(
+            widthFactor: value.clamp(0.0, 1.0),
+            alignment: Alignment.centerLeft,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                ),
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -527,7 +831,7 @@ void deleteEvent(String eventId, BuildContext context) {
         .collection("events")
         .doc(eventId)
         .update({"delete": true});
-    showSnackBar(context, "Event deleted Success");
+    showSnackBar(context, "Event deleted successfully");
   } on Exception catch (e) {
     debugPrint(e.toString());
   }

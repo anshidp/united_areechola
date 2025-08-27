@@ -14,174 +14,505 @@ class TeamTable extends StatefulWidget {
 }
 
 class _TeamTableState extends State<TeamTable> {
-  final style =
-      GoogleFonts.montserrat(fontSize: 11, fontWeight: FontWeight.w600);
-
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<AslTeamModel>>(
-      stream: FirebaseFirestore.instance
-          .collection('seasons')
-          .doc(widget.seasonModel.id)
-          .collection('teams')
-          .where('delete', isEqualTo: false)
-          .snapshots()
-          .map(
-            (event) =>
-                event.docs.map((e) => AslTeamModel.fromMap(e.data())).toList(),
-          ),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          print(snapshot.error);
-          return Center(
-            child: Text("Error loading teams"),
-          );
-        }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(
-            child: Text("No data"),
-          );
-        }
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        }
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF8FAFE),
+            Color(0xFFF1F5F9),
+          ],
+        ),
+      ),
+      child: StreamBuilder<List<AslTeamModel>>(
+        stream: FirebaseFirestore.instance
+            .collection('seasons')
+            .doc(widget.seasonModel.id)
+            .collection('teams')
+            .where('delete', isEqualTo: false)
+            .snapshots()
+            .map(
+              (event) => event.docs
+                  .map((e) => AslTeamModel.fromMap(e.data()))
+                  .toList(),
+            ),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return _buildErrorState();
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return _buildEmptyState();
+          }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return _buildLoadingState();
+          }
 
-        final teams = (snapshot.data ?? [])
-          ..sort((a, b) => b.point.compareTo(a.point));
+          final teams = (snapshot.data ?? [])
+            ..sort((a, b) => b.point.compareTo(a.point));
 
-        final groupATeams = teams.where((team) => team.group == 'A').toList();
-        final groupBTeams = teams.where((team) => team.group == 'B').toList();
+          final groupATeams = teams.where((team) => team.group == 'A').toList();
+          final groupBTeams = teams.where((team) => team.group == 'B').toList();
 
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildGroupTable('A', groupATeams),
-              const SizedBox(height: 20),
-              _buildGroupTable('B', groupBTeams),
-            ],
-          ),
-        );
-      },
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildSeasonHeader(),
+                SizedBox(height: 24),
+                _buildGroupTable('Group A', groupATeams, Color(0xFF3B82F6)),
+                SizedBox(height: 24),
+                _buildGroupTable('Group B', groupBTeams, Color(0xFF10B981)),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildGroupTable(String groupName, List<AslTeamModel> teams) {
+  Widget _buildSeasonHeader() {
     return Container(
-      color: Color(0xFFF2F2F2), // Background color
-      padding: const EdgeInsets.all(16.0), // Padding around the table
+      width: double.infinity,
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF667EEA).withOpacity(0.3),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            groupName,
-            style: GoogleFonts.montserrat(
-              fontSize: 16,
+            'League Table',
+            style: GoogleFonts.poppins(
+              fontSize: 24,
               fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white, // Table container color
-              borderRadius: BorderRadius.circular(12), // Rounded corners
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1), // Subtle shadow
-                  blurRadius: 6,
-                  offset: Offset(0, 3),
-                ),
-              ],
-            ),
-            child: DataTable(
-              columnSpacing: 15,
-              border: TableBorder(
-                horizontalInside: BorderSide.none,
-                verticalInside: BorderSide.none,
-              ),
-              columns: const [
-                DataColumn(
-                  label: Text(
-                    "Team",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    "PL",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    "W",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    "L",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    "D",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                DataColumn(
-                  label: Text(
-                    "PTS",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-              rows: List.generate(teams.length, (index) {
-                final team = teams[index];
-                return DataRow(cells: [
-                  DataCell(Row(
-                    children: [
-                      SizedBox(
-                        width: 30,
-                        height: 35,
-                        child: Image.asset(ImageConstants.clubLogo),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        team.name,
-                        style: style,
-                      ),
-                    ],
-                  )),
-                  DataCell(Text(
-                    team.playedMatch.toString(),
-                    style: style,
-                  )),
-                  DataCell(Text(
-                    team.win.toString(),
-                    style: style,
-                  )),
-                  DataCell(Text(
-                    team.lose.toString(),
-                    style: style,
-                  )),
-                  DataCell(Text(
-                    team.draw.toString(),
-                    style: style,
-                  )),
-                  DataCell(Text(
-                    team.point.toString(),
-                    style: style,
-                  )),
-                ]);
-              }),
+          SizedBox(height: 4),
+          Text(
+            widget.seasonModel.seasonName ?? 'Season',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.9),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGroupTable(
+      String groupName, List<AslTeamModel> teams, Color accentColor) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Group Header
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: accentColor,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.sports_soccer,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text(
+                  groupName,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                Spacer(),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${teams.length} Teams',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Table Header
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: Color(0xFFF8FAFC),
+              border: Border(
+                bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+              ),
+            ),
+            child: Row(
+              children: [
+                SizedBox(width: 30),
+                Expanded(
+                  flex: 4,
+                  child: Text(
+                    'Team',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+                _buildHeaderCell('PL'),
+                _buildHeaderCell('W'),
+                _buildHeaderCell('L'),
+                _buildHeaderCell('D'),
+                _buildHeaderCell('PTS'),
+              ],
+            ),
+          ),
+
+          // Team Rows
+          ListView.separated(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: teams.length,
+            separatorBuilder: (context, index) => Divider(
+              height: 1,
+              color: Color(0xFFF1F5F9),
+            ),
+            itemBuilder: (context, index) {
+              final team = teams[index];
+              final position = index + 1;
+              return _buildTeamRow(team, position, accentColor);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderCell(String text) {
+    return Expanded(
+      child: Center(
+        child: Text(
+          text,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTeamRow(AslTeamModel team, int position, Color accentColor) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: position <= 3 ? accentColor.withOpacity(0.05) : Colors.white,
+      ),
+      child: Row(
+        children: [
+          // Position
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: position <= 3 ? accentColor : Color(0xFF94A3B8),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                '$position',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 6),
+
+          // Team Info
+          Expanded(
+            flex: 4,
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      ImageConstants.clubLogo,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    team.name,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1E293B),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          _buildStatCell(team.playedMatch.toString()),
+          _buildStatCell(team.win.toString(),
+              isHighlight: true, color: Color(0xFF10B981)),
+          _buildStatCell(team.lose.toString(),
+              isHighlight: true, color: Color(0xFFEF4444)),
+          _buildStatCell(team.draw.toString()),
+          _buildPointsCell(team.point.toString(), accentColor),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCell(String value,
+      {bool isHighlight = false, Color? color}) {
+    return Expanded(
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: isHighlight ? color?.withOpacity(0.1) : null,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isHighlight ? color : Color(0xFF475569),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPointsCell(String points, Color accentColor) {
+    return Expanded(
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: accentColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            points,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return SizedBox(
+      height: 400,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Loading teams...',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return SizedBox(
+      height: 400,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.sports_soccer,
+                size: 48,
+                color: Color(0xFF94A3B8),
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'No teams found',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Teams will appear here once added',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return SizedBox(
+      height: 400,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Color(0xFFEF4444),
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Error loading teams',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Please try again later',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

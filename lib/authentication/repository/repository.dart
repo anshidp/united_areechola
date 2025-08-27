@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:united_areechola/Homepage/Screens/add_user_details.dart';
 import 'package:united_areechola/Models/userdatamodel.dart';
 import 'package:united_areechola/authentication/screens/splash_screen.dart';
 
@@ -62,17 +63,16 @@ class Authrepository {
       } else {
         final doc = FirebaseFirestore.instance.collection("Members").doc();
         UserDataModel dataModel = UserDataModel(
-            email: userCredential.user?.email ?? "",
-            password: "",
-            role: "user");
+            email: userCredential.user?.email ?? "", role: "user");
         dataModel.id = doc.id;
-        doc.set(dataModel.toMap());
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        prefs.setString("id", dataModel.id ?? "");
+        
         if (context.mounted) {
           Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => const SplashScreen()),
+              MaterialPageRoute(
+                  builder: (context) => AddUserDetails(
+                        userDataModel: dataModel,
+                      )),
               (route) => false);
         }
       }
@@ -109,6 +109,6 @@ class Authrepository {
 
     await FirebaseAuth.instance.signOut();
     await GoogleSignIn().signOut();
-    prefs.remove("id");
+    prefs.clear();
   }
 }

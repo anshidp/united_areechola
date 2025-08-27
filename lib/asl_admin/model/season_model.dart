@@ -40,7 +40,8 @@ class SeasonModel {
       'runner': runner,
       'bestPlayer': bestPlayer,
       'endDate': endDate,
-      'search': search
+      'search': search,
+      'images': SeasonImages().toMap(),
     };
   }
 
@@ -62,40 +63,40 @@ class SeasonModel {
 }
 
 class SeasonImages {
-  String bestdefender;
-  String bestgoal;
-  String bestsave;
-  String bestkeeper;
-  String bestmanager;
-  String bestplayer;
-  String emergingPlayer;
-  String fairPlaye;
-  String finalManofMatch;
-  String matchOfficial;
-  String runners;
-  String topScorer;
-  String winners;
+  String? bestdefender;
+  String? bestgoal;
+  String? bestsave;
+  String? bestkeeper;
+  String? bestmanager;
+  String? bestplayer;
+  String? emergingPlayer;
+  String? fairPlaye;
+  String? finalManofMatch;
+  String? matchOfficial;
+  String? runners;
+  String? topScorer;
+  String? winners;
   SeasonImages({
-    required this.bestdefender,
-    required this.bestgoal,
-    required this.bestsave,
-    required this.bestkeeper,
-    required this.bestmanager,
-    required this.bestplayer,
-    required this.emergingPlayer,
-    required this.fairPlaye,
-    required this.finalManofMatch,
-    required this.matchOfficial,
-    required this.runners,
-    required this.topScorer,
-    required this.winners,
+    this.bestdefender,
+    this.bestgoal,
+    this.bestsave,
+    this.bestkeeper,
+    this.bestmanager,
+    this.bestplayer,
+    this.emergingPlayer,
+    this.fairPlaye,
+    this.finalManofMatch,
+    this.matchOfficial,
+    this.runners,
+    this.topScorer,
+    this.winners,
   });
 
   factory SeasonImages.fromMap(Map<String, dynamic> map) {
     return SeasonImages(
       bestdefender: map['bestDefender'] ?? "",
       bestgoal: map['bestGoal'] ?? "",
-      bestsave: map['bestSave'] ?? "",
+      bestsave: map['bestsave'] ?? "",
       bestkeeper: map['bestkeeper'] ?? "",
       bestmanager: map['bestmanager'] ?? "",
       bestplayer: map['bestplayer'] ?? "",
@@ -107,5 +108,23 @@ class SeasonImages {
       topScorer: map['topScorer'] ?? "",
       winners: map['winners'] ?? "",
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'bestdefender': bestdefender,
+      'bestgoal': bestgoal,
+      'bestsave': bestsave,
+      'bestkeeper': bestkeeper,
+      'bestmanager': bestmanager,
+      'bestplayer': bestplayer,
+      'emergingPlayer': emergingPlayer,
+      'fairPlaye': fairPlaye,
+      'finalManofMatch': finalManofMatch,
+      'matchOfficial': matchOfficial,
+      'runners': runners,
+      'topScorer': topScorer,
+      'winners': winners,
+    };
   }
 }
