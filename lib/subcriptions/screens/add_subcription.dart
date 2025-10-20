@@ -1,3 +1,4 @@
+import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dropdown_textfield/dropdown_textfield.dart';
 import 'package:flutter/foundation.dart';
@@ -229,7 +230,7 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
             Expanded(
               child: _buildStatCard(
                 title: "This Month",
-                value: "₹${transactionamount.data?["thisMonth"] ?? 0}",
+                value: "${transactionamount.data?["thisMonth"] ?? 0}",
                 icon: Icons.calendar_month,
                 color: Colors.blue,
                 isLoading: false,
@@ -239,7 +240,7 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
             Expanded(
               child: _buildStatCard(
                 title: "Total Amount",
-                value: "₹${transactionamount.data?["total"] ?? 0}",
+                value: "${transactionamount.data?["total"] ?? 0}",
                 icon: Icons.account_balance_wallet,
                 color: Colors.green,
                 isLoading: false,
@@ -330,14 +331,25 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
             ],
           ),
           const SizedBox(height: 16),
-          Text(
-            value,
-            style: GoogleFonts.inter(
+          AnimatedFlipCounter(
+            fractionDigits: 1,
+            prefix: "₹",
+            duration: Duration(seconds: 1),
+            value: double.tryParse(value) ?? 0.0,
+            textStyle: GoogleFonts.inter(
               fontSize: 24,
               fontWeight: FontWeight.w800,
               color: Colors.white,
             ),
           ),
+          // Text(
+          //   value,
+          //   style: GoogleFonts.inter(
+          //     fontSize: 24,
+          //     fontWeight: FontWeight.w800,
+          //     color: Colors.white,
+          //   ),
+          // ),
           const SizedBox(height: 4),
           Text(
             title,

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dropdown_textfield/dropdown_textfield.dart';
 import 'package:flutter/foundation.dart';
@@ -13,9 +14,7 @@ import 'package:united_areechola/authentication/screens/splash_screen.dart';
 import 'package:united_areechola/common/common.dart';
 import 'package:united_areechola/constants.dart';
 import 'package:united_areechola/events/repository/repository.dart';
-import 'package:united_areechola/events/screens/addDemo_user.dart';
 import 'package:united_areechola/events/screens/event_expenses.dart';
-import 'package:united_areechola/events/widget/event_transactions_tiles.dart';
 import 'package:united_areechola/pdf/services.dart';
 
 import '../../Models/event_transaction_model.dart';
@@ -29,12 +28,12 @@ class EventTransactionsScreen extends ConsumerStatefulWidget {
       _EventTransactionsState();
 }
 
-class _EventTransactionsState extends ConsumerState<EventTransactionsScreen> 
+class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
   late Animation<double> _fadeAnimation;
-  
+
   Map<String, dynamic> users = {};
   final amountController = TextEditingController();
   final searchController = TextEditingController();
@@ -46,7 +45,8 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
   final dropdownselectedUsername = StateProvider<String?>((ref) => "");
   final isDemoUser = StateProvider((ref) => false);
   final usersearch = StateProvider((ref) => "");
-  
+  final usernameController = TextEditingController();
+
   double highestamount = 0;
   String highestPayer = "";
 
@@ -109,7 +109,7 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
     double scrHeight = MediaQuery.of(context).size.height;
     var transaction = ref.watch(isAddTransaction);
     var expense = ref.watch(isAddExpenses);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: _buildModernAppBar(),
@@ -127,25 +127,20 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                   children: [
                     _buildEventHeader(),
                     const SizedBox(height: 24),
-                    
                     if (ref.watch(isDemoUser))
                       _buildDemoUserCard()
                     else ...[
-                      _buildActionButtons(transaction, expense, scrWidth, scrHeight),
+                      _buildActionButtons(
+                          transaction, expense, scrWidth, scrHeight),
                       const SizedBox(height: 24),
-                      
                       if (transaction && isAdmin) _buildTransactionForm(),
                       if (expense && isAdmin) _buildExpenseForm(),
-                      
                       _buildStatisticsCards(scrWidth),
                       const SizedBox(height: 24),
-                      
                       _buildActionsRow(scrWidth, scrHeight),
                       const SizedBox(height: 24),
-                      
                       _buildSearchSection(),
                       const SizedBox(height: 20),
-                      
                       _buildTransactionsTable(),
                     ],
                   ],
@@ -292,32 +287,33 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
 
   Widget _buildDemoUserCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: AddDemoUser(eventId: widget.eventModel.eventId ?? ""),
-    );
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: _buildDemoUserTransactionForm());
   }
 
-  Widget _buildActionButtons(bool transaction, bool expense, double scrWidth, double scrHeight) {
+  Widget _buildActionButtons(
+      bool transaction, bool expense, double scrWidth, double scrHeight) {
     if (transaction || expense || !isAdmin) return const SizedBox.shrink();
-    
+
     return Row(
       children: [
         Expanded(
           child: _buildActionButton(
             title: 'Add Income',
             icon: Icons.add_circle_outline,
-            gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
+            gradient: const LinearGradient(
+                colors: [Color(0xFF10B981), Color(0xFF059669)]),
             onTap: () => ref.read(isAddTransaction.notifier).state = true,
           ),
         ),
@@ -326,7 +322,8 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
           child: _buildActionButton(
             title: 'Add Expense',
             icon: Icons.remove_circle_outline,
-            gradient: const LinearGradient(colors: [Color(0xFFEF4444), Color(0xFFDC2626)]),
+            gradient: const LinearGradient(
+                colors: [Color(0xFFEF4444), Color(0xFFDC2626)]),
             onTap: () => ref.read(isAddExpenses.notifier).state = true,
           ),
         ),
@@ -380,6 +377,112 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
     );
   }
 
+  Widget _buildDemoUserTransactionForm() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet,
+                  color: Color(0xFF10B981),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                "Add Income Transaction",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildFormField(
+            label: "Amount",
+            controller: amountController,
+            hintText: "Enter amount",
+            icon: Icons.monetization_on,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 20),
+          _buildFormField(
+            label: "Enter User",
+            controller: usernameController,
+            hintText: "Enter User",
+            icon: Icons.monetization_on,
+          ),
+          const SizedBox(height: 24),
+          _buildFormActions(
+            primaryTitle: "Add Transaction",
+            primaryAction: () async {
+              final eventtransactions = EventTransactionModel(
+                  search: search(usernameController.text.trim()),
+                  delete: false,
+                  amount: double.tryParse(amountController.text),
+                  createdDate: DateTime.now(),
+                  userId: "",
+                  username: usernameController.text.trim(),
+                  eventId: widget.eventModel.eventId);
+              if ((usernameController.text.trim()).isEmpty) {
+                return showSnackBarMsg(
+                    context, "Please enter username", Colors.red);
+              }
+              if (amountController.text.isEmpty) {
+                return showSnackBarMsg(
+                    context, "Please enter a amount", Colors.red);
+              }
+              bool confirm =
+                  await addDialog(context, "Do you want add Transaction?");
+              if (confirm) {
+                ref.read(eventrepositoryProvider).addEventsTransaction(
+                    eventTransactionModel: eventtransactions,
+                    eventId: widget.eventModel.eventId ?? "");
+                if (context.mounted) {
+                  showSnackBarMsg(
+                      context, "Transaction Added successfull", Colors.red);
+                }
+
+                amountController.clear();
+                usernameController.clear();
+              }
+            },
+            secondaryAction: () {
+              ref.read(isDemoUser.notifier).state = false;
+              ref.read(isAddTransaction.notifier).state = false;
+              amountController.clear();
+              usernameController.clear();
+              cleardropdown();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTransactionForm() {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -423,7 +526,6 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
             ],
           ),
           const SizedBox(height: 24),
-          
           _buildFormField(
             label: "Amount",
             controller: amountController,
@@ -433,10 +535,8 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
           const SizedBox(height: 20),
-          
           _buildUserDropdown(),
           const SizedBox(height: 24),
-          
           _buildFormActions(
             primaryTitle: "Add Transaction",
             primaryAction: () async {
@@ -448,22 +548,26 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 userId: ref.read(dropdownselectedItem),
                 eventId: widget.eventModel.eventId,
               );
-              
+
               if (((ref.read(dropdownselectedItem) ?? "")).isEmpty) {
-                return showSnackBarMsg(context, "Please choose a user", Colors.red);
+                return showSnackBarMsg(
+                    context, "Please choose a user", Colors.red);
               }
               if (amountController.text.isEmpty) {
-                return showSnackBarMsg(context, "Please enter an amount", Colors.red);
+                return showSnackBarMsg(
+                    context, "Please enter an amount", Colors.red);
               }
-              
-              bool confirm = await addDialog(context, "Do you want to add this transaction?");
+
+              bool confirm = await addDialog(
+                  context, "Do you want to add this transaction?");
               if (confirm) {
                 ref.read(eventrepositoryProvider).addEventsTransaction(
-                  eventTransactionModel: eventtransactions,
-                  eventId: widget.eventModel.eventId ?? "",
-                );
+                      eventTransactionModel: eventtransactions,
+                      eventId: widget.eventModel.eventId ?? "",
+                    );
                 if (context.mounted) {
-                  showSnackBarMsg(context, "Transaction added successfully", Colors.green);
+                  showSnackBarMsg(
+                      context, "Transaction added successfully", Colors.green);
                 }
                 cleardropdown();
                 amountController.clear();
@@ -523,7 +627,6 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
             ],
           ),
           const SizedBox(height: 24),
-          
           _buildFormField(
             label: "Expense Name",
             controller: expenseController,
@@ -531,7 +634,6 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
             icon: Icons.description,
           ),
           const SizedBox(height: 20),
-          
           _buildFormField(
             label: "Amount",
             controller: amountController,
@@ -541,7 +643,6 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
           const SizedBox(height: 24),
-          
           _buildFormActions(
             primaryTitle: "Add Expense",
             primaryAction: () async {
@@ -552,22 +653,26 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 userId: ref.read(dropdownselectedItem),
                 eventId: widget.eventModel.eventId,
               );
-              
+
               if (expenseController.text.trim().isEmpty) {
-                return showSnackBarMsg(context, 'Please enter expense name', Colors.red);
+                return showSnackBarMsg(
+                    context, 'Please enter expense name', Colors.red);
               }
               if (amountController.text.trim().isEmpty) {
-                return showSnackBarMsg(context, 'Please enter amount', Colors.red);
+                return showSnackBarMsg(
+                    context, 'Please enter amount', Colors.red);
               }
-              
-              bool confirm = await addDialog(context, "Do you want to add this expense?");
+
+              bool confirm =
+                  await addDialog(context, "Do you want to add this expense?");
               if (confirm) {
                 ref.read(eventrepositoryProvider).addEventsExpense(
-                  eventExpenseModel: eventExpenses,
-                  eventId: widget.eventModel.eventId ?? "",
-                );
+                      eventExpenseModel: eventExpenses,
+                      eventId: widget.eventModel.eventId ?? "",
+                    );
                 if (context.mounted) {
-                  showSnackBarMsg(context, "Expense added successfully", Colors.green);
+                  showSnackBarMsg(
+                      context, "Expense added successfully", Colors.green);
                 }
                 expenseController.clear();
                 amountController.clear();
@@ -626,7 +731,8 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
             ),
             filled: true,
             fillColor: Colors.grey.shade50,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
       ],
@@ -659,7 +765,8 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
               onChanged: (value) {
                 if (value is DropDownValueModel) {
                   ref.read(dropdownselectedItem.notifier).state = value.value;
-                  ref.read(dropdownselectedUsername.notifier).state = value.name;
+                  ref.read(dropdownselectedUsername.notifier).state =
+                      value.name;
                 } else {
                   ref.read(dropdownselectedItem.notifier).state = null;
                   ref.read(dropdownselectedUsername.notifier).state = null;
@@ -668,7 +775,8 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
               textFieldDecoration: InputDecoration(
                 hintText: 'Select user',
                 hintStyle: TextStyle(color: Colors.grey.shade400),
-                prefixIcon: const Icon(Icons.person, color: Color(0xFF667EEA), size: 20),
+                prefixIcon: const Icon(Icons.person,
+                    color: Color(0xFF667EEA), size: 20),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.grey.shade300),
@@ -679,11 +787,13 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF667EEA), width: 2),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF667EEA), width: 2),
                 ),
                 filled: true,
                 fillColor: Colors.grey.shade50,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               ),
             ),
           ],
@@ -739,7 +849,8 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
               borderRadius: BorderRadius.circular(12),
               onTap: primaryAction,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 child: Text(
                   primaryTitle,
                   style: const TextStyle(
@@ -764,9 +875,20 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
             children: [
               Row(
                 children: [
-                  Expanded(child: _buildStatCard("Event Name", widget.eventModel.eventname ?? "", const Color(0xFF667EEA), Icons.event)),
+                  Expanded(
+                      child: _buildStatCard(
+                          "Event Name",
+                          widget.eventModel.eventname ?? "",
+                          const Color(0xFF667EEA),
+                          Icons.event)),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildStatCard("Date", DateFormat("dd-MM-yyyy").format(widget.eventModel.createdDate!), const Color(0xFFEF4444), Icons.calendar_today)),
+                  Expanded(
+                      child: _buildStatCard(
+                          "Date",
+                          DateFormat("dd-MM-yyyy")
+                              .format(widget.eventModel.createdDate!),
+                          const Color(0xFFEF4444),
+                          Icons.calendar_today)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -783,9 +905,20 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
           // Desktop layout - all cards in one row
           return Row(
             children: [
-              Expanded(child: _buildStatCard("Event Name", widget.eventModel.eventname ?? "", const Color(0xFF667EEA), Icons.event)),
+              Expanded(
+                  child: _buildStatCard(
+                      "Event Name",
+                      widget.eventModel.eventname ?? "",
+                      const Color(0xFF667EEA),
+                      Icons.event)),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard("Date", DateFormat("dd-MM-yyyy").format(widget.eventModel.createdDate!), const Color(0xFFEF4444), Icons.calendar_today)),
+              Expanded(
+                  child: _buildStatCard(
+                      "Date",
+                      DateFormat("dd-MM-yyyy")
+                          .format(widget.eventModel.createdDate!),
+                      const Color(0xFFEF4444),
+                      Icons.calendar_today)),
               const SizedBox(width: 16),
               Expanded(child: _buildIncomeCard()),
               const SizedBox(width: 16),
@@ -797,7 +930,8 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
     );
   }
 
-  Widget _buildStatCard(String title, String value, Color color, IconData icon) {
+  Widget _buildStatCard(
+      String title, String value, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -877,7 +1011,8 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                   color: const Color(0xFF10B981).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.trending_up, color: Color(0xFF10B981), size: 24),
+                child: const Icon(Icons.trending_up,
+                    color: Color(0xFF10B981), size: 24),
               ),
               const SizedBox(height: 12),
               Text(
@@ -889,14 +1024,15 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                '₹${snapshot.data?.toStringAsFixed(0) ?? '0'}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF10B981),
-                ),
-              ),
+              AnimatedFlipCounter(
+                  prefix: "₹",
+                  duration: Duration(milliseconds: 1500),
+                  value: snapshot.data ?? 0.0,
+                  textStyle: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF10B981),
+                  )),
             ],
           ),
         );
@@ -947,7 +1083,8 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                     color: const Color(0xFFEF4444).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.trending_down, color: Color(0xFFEF4444), size: 24),
+                  child: const Icon(Icons.trending_down,
+                      color: Color(0xFFEF4444), size: 24),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -959,14 +1096,24 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  '₹${snapshot.data?.toStringAsFixed(0) ?? '0'}',
-                  style: const TextStyle(
+                AnimatedFlipCounter(
+                  prefix: "₹",
+                  duration: Duration(milliseconds: 1500),
+                  value: snapshot.data ?? 0.0,
+                  textStyle: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFFEF4444),
                   ),
                 ),
+                // Text(
+                //   '₹${snapshot.data?.toStringAsFixed(0) ?? '0'}',
+                //   style: const TextStyle(
+                //     fontSize: 18,
+                //     fontWeight: FontWeight.bold,
+                //     color: Color(0xFFEF4444),
+                //   ),
+                // ),
                 if ((snapshot.data ?? 0) > 0) ...[
                   const SizedBox(height: 4),
                   Text(
@@ -1016,7 +1163,8 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 );
               },
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1089,7 +1237,8 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
             decoration: InputDecoration(
               hintText: "Search by user name...",
               hintStyle: TextStyle(color: Colors.grey.shade400),
-              prefixIcon: const Icon(Icons.search, color: Color(0xFF667EEA), size: 20),
+              prefixIcon:
+                  const Icon(Icons.search, color: Color(0xFF667EEA), size: 20),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.grey.shade300),
@@ -1100,11 +1249,13 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF667EEA), width: 2),
+                borderSide:
+                    const BorderSide(color: Color(0xFF667EEA), width: 2),
               ),
               filled: true,
               fillColor: Colors.grey.shade50,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
           ),
         ],
@@ -1120,281 +1271,300 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
           "eventId": widget.eventModel.eventId,
           "search": ref.read(usersearch)
         };
-        
+
         return ref.watch(eventTransactionStream(jsonEncode(data))).when(
-          data: (transactionData) {
-            if (transactionData.isEmpty) {
-              return Container(
-                padding: const EdgeInsets.all(40),
+              data: (transactionData) {
+                if (transactionData.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(40),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.receipt_long_outlined,
+                          size: 64,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "No Transactions Found",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Add your first transaction to get started",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF667EEA).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.list_alt,
+                                color: Color(0xFF667EEA),
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              "Transaction History (${transactionData.length})",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: DataTable(
+                          headingTextStyle: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                          dataTextStyle: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                          decoration: const BoxDecoration(
+                            borderRadius: BorderRadius.only(
+                              bottomLeft: Radius.circular(16),
+                              bottomRight: Radius.circular(16),
+                            ),
+                          ),
+                          headingRowColor:
+                              WidgetStateProperty.all(const Color(0xFFF8FAFC)),
+                          columns: [
+                            const DataColumn(
+                              label: Text("No."),
+                            ),
+                            const DataColumn(
+                              label: Text("Name"),
+                            ),
+                            const DataColumn(
+                              label: Text("Amount"),
+                            ),
+                            if (kIsWeb) ...[
+                              const DataColumn(
+                                label: Text("Date"),
+                              ),
+                              const DataColumn(
+                                label: Text("Actions"),
+                              ),
+                            ],
+                          ],
+                          rows: List.generate(transactionData.length, (index) {
+                            final transaction = transactionData[index];
+
+                            return DataRow(
+                              color: WidgetStateProperty.all(
+                                index % 2 == 0
+                                    ? Colors.white
+                                    : const Color(0xFFF8FAFC),
+                              ),
+                              cells: [
+                                DataCell(
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF667EEA)
+                                          .withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      "${index + 1}",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF667EEA),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  transaction.userId == ""
+                                      ? Text(
+                                          transaction.username ?? "",
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w600),
+                                        )
+                                      : FutureBuilder<String>(
+                                          future: FirebaseFirestore.instance
+                                              .collection("users")
+                                              .doc(transaction.userId)
+                                              .get()
+                                              .then((value) =>
+                                                  value.data()?["name"] ??
+                                                  "Unknown"),
+                                          builder: (context, snapshot) {
+                                            return Text(
+                                              snapshot.data?.toUpperCase() ??
+                                                  "Loading...",
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.w600),
+                                            );
+                                          },
+                                        ),
+                                ),
+                                DataCell(
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981)
+                                          .withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      "₹${transaction.amount?.toStringAsFixed(0) ?? '0'}",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF10B981),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                if (kIsWeb) ...[
+                                  DataCell(
+                                    Text(
+                                      DateFormat("dd MMM yyyy")
+                                          .format(transaction.createdDate!),
+                                      style: TextStyle(
+                                          color: Colors.grey.shade600),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFEF4444)
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: IconButton(
+                                        icon: const Icon(
+                                          Icons.delete_outline,
+                                          color: Color(0xFFEF4444),
+                                          size: 18,
+                                        ),
+                                        onPressed: () async {
+                                          bool delete = await addDialog(
+                                            context,
+                                            "Are you sure you want to delete this transaction?",
+                                          );
+                                          if (delete) {
+                                            deleteUser(
+                                              eventId:
+                                                  widget.eventModel.eventId ??
+                                                      "",
+                                              transId: transaction.id ?? "",
+                                            );
+                                            if (context.mounted) {
+                                              showSnackBarMsg(
+                                                context,
+                                                "Transaction deleted successfully",
+                                                Colors.green,
+                                              );
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            );
+                          }),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              error: (Object error, StackTrace stackTrace) {
+                return Container(
+                  padding: const EdgeInsets.all(40),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.error_outline,
+                          color: Colors.red.shade400, size: 48),
+                      const SizedBox(height: 16),
+                      Text(
+                        "Error loading transactions",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        error.toString(),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.red.shade600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loading: () => Container(
+                height: 200,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.receipt_long_outlined,
-                      size: 64,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      "No Transactions Found",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Add your first transaction to get started",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                  ],
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(Color(0xFF667EEA)),
+                  ),
                 ),
-              );
-            }
-
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF667EEA).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.list_alt,
-                            color: Color(0xFF667EEA),
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          "Transaction History (${transactionData.length})",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      headingTextStyle: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                      dataTextStyle: const TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
-                      ),
-                      decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(16),
-                          bottomRight: Radius.circular(16),
-                        ),
-                      ),
-                      headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
-                      columns: [
-                        const DataColumn(
-                          label: Text("No."),
-                        ),
-                        const DataColumn(
-                          label: Text("Name"),
-                        ),
-                        const DataColumn(
-                          label: Text("Amount"),
-                        ),
-                        if (kIsWeb) ...[
-                          const DataColumn(
-                            label: Text("Date"),
-                          ),
-                          const DataColumn(
-                            label: Text("Actions"),
-                          ),
-                        ],
-                      ],
-                      rows: List.generate(transactionData.length, (index) {
-                        final transaction = transactionData[index];
-                        
-                        return DataRow(
-                          color: WidgetStateProperty.all(
-                            index % 2 == 0 ? Colors.white : const Color(0xFFF8FAFC),
-                          ),
-                          cells: [
-                            DataCell(
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF667EEA).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  "${index + 1}",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF667EEA),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            DataCell(
-                              transaction.userId == ""
-                                  ? Text(
-                                      transaction.username ?? "",
-                                      style: const TextStyle(fontWeight: FontWeight.w600),
-                                    )
-                                  : FutureBuilder<String>(
-                                      future: FirebaseFirestore.instance
-                                          .collection("users")
-                                          .doc(transaction.userId)
-                                          .get()
-                                          .then((value) => value.data()?["name"] ?? "Unknown"),
-                                      builder: (context, snapshot) {
-                                        return Text(
-                                          snapshot.data?.toUpperCase() ?? "Loading...",
-                                          style: const TextStyle(fontWeight: FontWeight.w600),
-                                        );
-                                      },
-                                    ),
-                            ),
-                            DataCell(
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF10B981).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  "₹${transaction.amount?.toStringAsFixed(0) ?? '0'}",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF10B981),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            if (kIsWeb) ...[
-                              DataCell(
-                                Text(
-                                  DateFormat("dd MMM yyyy").format(transaction.createdDate!),
-                                  style: TextStyle(color: Colors.grey.shade600),
-                                ),
-                              ),
-                              DataCell(
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEF4444).withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: IconButton(
-                                    icon: const Icon(
-                                      Icons.delete_outline,
-                                      color: Color(0xFFEF4444),
-                                      size: 18,
-                                    ),
-                                    onPressed: () async {
-                                      bool delete = await addDialog(
-                                        context,
-                                        "Are you sure you want to delete this transaction?",
-                                      );
-                                      if (delete) {
-                                        deleteUser(
-                                          eventId: widget.eventModel.eventId ?? "",
-                                          transId: transaction.id ?? "",
-                                        );
-                                        if (context.mounted) {
-                                          showSnackBarMsg(
-                                            context,
-                                            "Transaction deleted successfully",
-                                            Colors.green,
-                                          );
-                                        }
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        );
-                      }),
-                    ),
-                  ),
-                ],
               ),
             );
-          },
-          error: (Object error, StackTrace stackTrace) {
-            return Container(
-              padding: const EdgeInsets.all(40),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  Icon(Icons.error_outline, color: Colors.red.shade400, size: 48),
-                  const SizedBox(height: 16),
-                  Text(
-                    "Error loading transactions",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red.shade700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    error.toString(),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.red.shade600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            );
-          },
-          loading: () => Container(
-            height: 200,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF667EEA)),
-              ),
-            ),
-          ),
-        );
       },
     );
   }

@@ -95,6 +95,7 @@ class FirebaseContants {
   static const transactions = "transactions";
   static const members = "Members";
   static const notification = "notification";
+  static const kuriGroups = "KuriGroups";
 }
 
 Future<bool> myalert(BuildContext context, String message) async {

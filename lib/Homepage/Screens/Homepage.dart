@@ -14,6 +14,7 @@ import 'package:united_areechola/authentication/screens/splash_screen.dart';
 import 'package:united_areechola/bloodGroups/screens/bloodgroup.dart';
 import 'package:united_areechola/constants.dart';
 import 'package:united_areechola/events/screens/addevents.dart';
+import 'package:united_areechola/kuri/screens/kuri_homescreen.dart';
 import 'package:united_areechola/subcriptions/screens/add_subcription.dart';
 
 /// ERP VERSIONS
@@ -60,6 +61,11 @@ class _HomeState extends ConsumerState<Home>
       color: Color(0xFFDC2626),
     ),
     NavigationItem(
+      icon: Icon(Icons.celebration),
+      label: 'Kuri',
+      color: Color(0xFFF59E0B),
+    ),
+    NavigationItem(
       icon: Icon(Icons.event_rounded),
       label: 'Events',
       color: Color(0xFFF59E0B),
@@ -77,13 +83,14 @@ class _HomeState extends ConsumerState<Home>
   void updateUserToken(UserDataModel user) async {
     try {
       String token = await FirebaseMessaging.instance.getToken() ?? "";
-      print("token updated success $token");
+
       if ((user.token ?? "").isEmpty || user.token != token) {
         await FirebaseFirestore.instance
             .collection(FirebaseContants.members)
             .doc(user.id)
             .update({"token": token});
-        print("token updated success $token");
+
+        print("isAdmin: $isAdmin");
       }
     } on FirebaseException catch (e) {
       debugPrint(e.toString());
@@ -95,7 +102,7 @@ class _HomeState extends ConsumerState<Home>
     super.initState();
 
     _tabController =
-        TabController(vsync: this, length: kIsWeb ? 6 : 5, initialIndex: 0);
+        TabController(vsync: this, length: kIsWeb ? 6 : 6, initialIndex: 0);
 
     updateUserToken(userDataModel!);
   }
@@ -130,7 +137,7 @@ class _HomeState extends ConsumerState<Home>
                         //! subcription
                         AddSubcription(),
                         //! Events
-                        AddEvents(),
+                        AddEventsScreen(),
 
                         //!Asl admin
                         AslAdmin(),
@@ -237,7 +244,8 @@ class _HomeState extends ConsumerState<Home>
             Asl(),
             AddSubcription(),
             BloodGroups(),
-            AddEvents(),
+            KuriHomeScreen(),
+            AddEventsScreen(),
           ],
         ),
       ),

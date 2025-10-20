@@ -13,14 +13,14 @@ import 'package:united_areechola/constants.dart';
 import 'package:united_areechola/events/repository/repository.dart';
 import 'package:united_areechola/events/screens/event_transactions.dart';
 
-class AddEvents extends ConsumerStatefulWidget {
-  const AddEvents({super.key});
+class AddEventsScreen extends ConsumerStatefulWidget {
+  const AddEventsScreen({super.key});
 
   @override
-  ConsumerState<AddEvents> createState() => _AddEventsState();
+  ConsumerState<AddEventsScreen> createState() => _AddEventsState();
 }
 
-class _AddEventsState extends ConsumerState<AddEvents>
+class _AddEventsState extends ConsumerState<AddEventsScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
@@ -575,7 +575,7 @@ class _AddEventsState extends ConsumerState<AddEvents>
           Icon(Icons.info_outline, size: 16, color: Colors.grey.shade500),
           const SizedBox(width: 8),
           Text(
-            "Version 1.8",
+            "Version 2.0",
             style: GoogleFonts.poppins(
               fontSize: 14,
               color: Colors.grey.shade500,

@@ -121,9 +121,11 @@ class _DashboardChartState extends State<DashboardChart> {
     fetchDataFromFirestore();
     Future.delayed(Duration(seconds: 1)).then(
       (value) {
-        setState(() {
-          isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
       },
     );
   }
@@ -218,7 +220,7 @@ class _DashboardChartState extends State<DashboardChart> {
         rawBarGroups = barChartGroups;
         showingBarGroups = rawBarGroups;
       });
-    } catch (e,s) {
+    } catch (e, s) {
       print(s.toString());
       print(e);
     }
@@ -252,7 +254,7 @@ class _DashboardChartState extends State<DashboardChart> {
         rawBarGroups = barChartGroups;
         showingBarGroups = rawBarGroups;
       });
-    } catch (e,s) {
+    } catch (e, s) {
       print(s.toString());
       print("Error in processYearlyData: ${e.toString()}");
     }

@@ -1,9 +1,13 @@
+import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:united_areechola/Homepage/chart/dashboard_chart.dart';
+import 'package:united_areechola/authentication/screens/login.dart';
 import 'package:united_areechola/authentication/screens/splash_screen.dart';
+import 'package:united_areechola/events/screens/addevents.dart';
 
 class Dashboard extends ConsumerStatefulWidget {
   const Dashboard({super.key});
@@ -17,11 +21,11 @@ class _DashboardState extends ConsumerState<Dashboard>
   late AnimationController _animationController;
   late AnimationController _statsAnimationController;
   late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
 
   int totalUsers = 0;
   int totalevents = 0;
   double totalsubcriptionIncome = 0;
+  double totalEventIncome = 0;
   bool isLoading = true;
 
   @override
@@ -101,6 +105,18 @@ class _DashboardState extends ConsumerState<Dashboard>
             totalevents = value.count ?? 0;
           });
         }),
+        FirebaseFirestore.instance
+            .collection("events")
+            .where("delete", isEqualTo: false)
+            .get()
+            .then((value) {
+          setState(() {
+            totalEventIncome = 0;
+            for (var i in value.docs) {
+              totalEventIncome += i["totalIncome"] ?? 0;
+            }
+          });
+        }),
       ]);
 
       setState(() {
@@ -118,7 +134,7 @@ class _DashboardState extends ConsumerState<Dashboard>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final theme = Theme.of(context);
+
     double scrWidth = MediaQuery.of(context).size.width;
     double scrHeight = MediaQuery.of(context).size.height;
 
@@ -212,8 +228,10 @@ class _DashboardState extends ConsumerState<Dashboard>
                       ],
                     ),
                     child: CircleAvatar(
-                      backgroundImage:
-                          NetworkImage(userDataModel?.photoUrl ?? ""),
+                      backgroundImage: userDataModel?.photoUrl == null ||
+                              (userDataModel?.photoUrl ?? "").isEmpty
+                          ? null
+                          : NetworkImage(userDataModel?.photoUrl ?? ""),
                       radius: size.width * 0.06,
                       backgroundColor: Colors.white,
                     ),
@@ -254,8 +272,10 @@ class _DashboardState extends ConsumerState<Dashboard>
                     color: Colors.white,
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   "Hi, ${userDataModel?.role.toUpperCase() ?? 'ADMIN'}",
                   style: GoogleFonts.inter(
@@ -267,6 +287,77 @@ class _DashboardState extends ConsumerState<Dashboard>
               ],
             ),
           ],
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: IconButton(
+              onPressed: () {
+                // Show logout confirmation dialog
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    title: Text(
+                      'Logout',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                    ),
+                    content: Text(
+                      'Are you sure you want to logout?',
+                      style: GoogleFonts.inter(),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.inter(color: Colors.grey),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          SharedPreferences prefs =
+                              await SharedPreferences.getInstance();
+                          prefs.remove("id");
+                          if (context.mounted) {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const LoginPage()),
+                              (route) => false,
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: Text(
+                          'Logout',
+                          style: GoogleFonts.inter(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.logout_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+              tooltip: 'Logout',
+            ),
+          ),
         ],
       ),
     );
@@ -297,21 +388,28 @@ class _DashboardState extends ConsumerState<Dashboard>
     final stats = [
       {
         'title': 'Total Users',
-        'value': totalUsers.toString(),
+        'value': totalUsers,
         'icon': Icons.people_outline,
         'color': Colors.green,
         'gradient': [Colors.green[400]!, Colors.green[600]!],
       },
       {
         'title': 'Total Events',
-        'value': totalevents.toString(),
+        'value': totalevents,
         'icon': Icons.event_outlined,
         'color': Colors.blue,
         'gradient': [Colors.blue[400]!, Colors.blue[600]!],
       },
       {
         'title': 'Total Income',
-        'value': '₹${totalsubcriptionIncome.toStringAsFixed(0)}',
+        'value': totalsubcriptionIncome,
+        'icon': Icons.account_balance_wallet_outlined,
+        'color': Colors.purple,
+        'gradient': [Colors.purple[400]!, Colors.purple[600]!],
+      },
+      {
+        'title': 'Event Collection',
+        'value': totalEventIncome,
         'icon': Icons.account_balance_wallet_outlined,
         'color': Colors.purple,
         'gradient': [Colors.purple[400]!, Colors.purple[600]!],
@@ -371,7 +469,10 @@ class _DashboardState extends ConsumerState<Dashboard>
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () {
-            // Add navigation or action here
+            if (index == 1) {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => AddEventsScreen()));
+            }
           },
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -404,14 +505,24 @@ class _DashboardState extends ConsumerState<Dashboard>
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      stat['value'] as String,
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+                    AnimatedFlipCounter(
+                        fractionDigits: index == 2 || index == 3 ? 1 : 0,
+                        prefix: index == 2 || index == 3 ? "₹" : "",
+                        duration: Duration(seconds: 2),
+                        value: stat['value'] ?? 0,
+                        textStyle: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 25,
+                          fontWeight: FontWeight.w800,
+                        )),
+                    // Text(
+                    //   stat['value'] as String,
+                    //   style: GoogleFonts.inter(
+                    //     color: Colors.white,
+                    //     fontSize: 28,
+                    //     fontWeight: FontWeight.w800,
+                    //   ),
+                    // ),
                     const SizedBox(height: 4),
                     Text(
                       stat['title'] as String,
