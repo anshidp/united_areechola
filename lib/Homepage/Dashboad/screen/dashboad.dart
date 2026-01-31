@@ -433,7 +433,7 @@ class _DashboardState extends ConsumerState<Dashboard>
             final stat = stats[index];
             return TweenAnimationBuilder<double>(
               tween: Tween(begin: 0.0, end: 1.0),
-              duration: Duration(milliseconds: 800 + (index * 200)),
+              duration: Duration(milliseconds: 900 + (index * 200)),
               builder: (context, value, child) {
                 return Transform.scale(
                   scale: value,
@@ -508,7 +508,7 @@ class _DashboardState extends ConsumerState<Dashboard>
                     AnimatedFlipCounter(
                         fractionDigits: index == 2 || index == 3 ? 1 : 0,
                         prefix: index == 2 || index == 3 ? "₹" : "",
-                        duration: Duration(seconds: 2),
+                        duration: Duration(milliseconds: 200),
                         value: stat['value'] ?? 0,
                         textStyle: GoogleFonts.inter(
                           color: Colors.white,

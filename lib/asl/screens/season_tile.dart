@@ -193,8 +193,7 @@ class _EnhancedSeasonTileState extends ConsumerState<EnhancedSeasonTile>
                                     const SizedBox(height: 8),
                                     _buildStatRow(
                                       'Teams',
-                                      (widget.seasonModel.teams ?? [])
-                                          .length
+                                      (widget.seasonModel.teams ?? 0)
                                           .toString(),
                                       Icons.groups_rounded,
                                       Colors.orange[600]!,

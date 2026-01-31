@@ -1,11 +1,12 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+
 class SeasonModel {
   DateTime createdDate;
   bool delete;
   String seasonName;
   String? id;
   int year;
-  List? teams;
+  int? teams;
   String? winner;
   String? runner;
   String? bestPlayer;
@@ -53,7 +54,7 @@ class SeasonModel {
         seasonName: map['seasonName'] ?? "",
         id: map['id'] ?? "",
         year: map['year'] ?? 0,
-        teams: map['teams'] ?? [],
+        teams: map['teams'] ?? 0,
         winner: map['winner'] ?? "",
         runner: map['runner'] ?? "",
         bestPlayer: map['bestPlayer'] ?? "",
@@ -126,5 +127,31 @@ class SeasonImages {
       'topScorer': topScorer,
       'winners': winners,
     };
+  }
+}
+
+class SeasonAward {
+  final String id;
+  final String key;
+  final String title;
+  final String imageUrl;
+  final bool enabled;
+
+  SeasonAward({
+    required this.id,
+    required this.key,
+    required this.title,
+    required this.imageUrl,
+    required this.enabled,
+  });
+
+  factory SeasonAward.fromMap(Map<String, dynamic> data) {
+    return SeasonAward(
+      id: data['id'] ?? "",
+      key: data['key'] ?? '',
+      title: data['title'] ?? '',
+      imageUrl: data['imageUrl'] ?? '',
+      enabled: data['enabled'] ?? true,
+    );
   }
 }

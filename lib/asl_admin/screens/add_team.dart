@@ -24,12 +24,14 @@ class _AddPlayersState extends ConsumerState<AddTeams>
   final selectTeam = StateProvider<String?>((ref) => null);
   final isTeamEdit = StateProvider<bool>((ref) => false);
   final selectSeason = StateProvider<String?>((ref) => null);
+  final selectGroup = StateProvider<String?>((ref) => null);
   final seasons = StateProvider<Map<String, dynamic>>((ref) => {});
   final managers = StateProvider<Map<String, ManagerModel>>((ref) => {});
   final selectedPlayers = [];
   final teamPlayers = StateProvider<Map<String, PlayerModel>>((ref) => {});
   final selectedTeamModel = StateProvider<AslTeamModel?>((ref) => null);
   final teamNameController = TextEditingController();
+  final groups = ["A", "B"];
   String? downloadUrl;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -356,6 +358,33 @@ class _AddPlayersState extends ConsumerState<AddTeams>
                   }).toList(),
                   onChanged: (value) {
                     ref.read(selectmanager.notifier).state = value;
+                  },
+                ),
+              ),
+              SizedBox(width: w * 0.02),
+              Expanded(
+                child: _buildModernDropdownField(
+                  label: "Group",
+                  icon: Icons.calendar_today,
+                  value: (ref.watch(selectGroup) ?? "").isEmpty
+                      ? null
+                      : ref.read(selectGroup),
+                  items: groups.map((g) {
+                    return DropdownMenuItem<String>(
+                      value: g,
+                      child: Text(
+                        g,
+                        style: GoogleFonts.poppins(
+                          color: const Color(0xFF1E293B),
+                          fontSize: w * 0.011,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) async {
+                    if (value != null) {
+                      ref.read(selectGroup.notifier).state = value;
+                    }
                   },
                 ),
               ),
@@ -853,6 +882,7 @@ class _AddPlayersState extends ConsumerState<AddTeams>
     teamNameController.text = team.name;
     ref.read(selectTeam.notifier).state = team.teamId;
     ref.read(selectmanager.notifier).state = team.manager;
+    ref.read(selectGroup.notifier).state = team.group;
   }
 
   Future<void> _handleTeamSubmission(
@@ -861,6 +891,8 @@ class _AddPlayersState extends ConsumerState<AddTeams>
       return showSnackBarToast(context, "Please enter team name", "red");
     } else if ((ref.read(selectmanager) ?? "").isEmpty) {
       return showSnackBarToast(context, "Please choose manager", "red");
+    } else if ((ref.read(selectGroup) ?? "").isEmpty) {
+      return showSnackBarToast(context, "Please choose group", "red");
     }
 
     if (ref.read(isTeamEdit)) {
@@ -868,10 +900,10 @@ class _AddPlayersState extends ConsumerState<AddTeams>
           await alert(context, "Do you want to update this team?", w, h);
       if (confirm) {
         final copy = ref.read(selectedTeamModel)?.copyWith(
-              name: teamNameController.text,
-              manager: ref.read(selectmanager),
-              image: downloadUrl,
-            );
+            name: teamNameController.text,
+            manager: ref.read(selectmanager),
+            image: downloadUrl,
+            group: ref.read(selectGroup));
 
         ref.read(aslRepositoryProvider).updateTeam(
               ref.read(selectedTeamModel)?.teamId ?? "",
@@ -888,7 +920,7 @@ class _AddPlayersState extends ConsumerState<AddTeams>
       if (confirm) {
         final teamModel = AslTeamModel(
           seasonId: ref.read(selectSeason) ?? '',
-          group: "A",
+          group: ref.read(selectGroup) ?? "",
           draw: 0,
           playedMatch: 0,
           win: 0,
@@ -913,6 +945,11 @@ class _AddPlayersState extends ConsumerState<AddTeams>
               .doc(player)
               .update({"teamId": teamId});
         }
+
+        await db
+            .collection(FirebaseConstants.seasonCollection)
+            .doc(ref.read(selectSeason))
+            .update({"teams": FieldValue.increment(1)});
 
         showSnackBarToast(context, "New team added successfully", "green");
         _resetForm();

@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -12,30 +11,41 @@ import 'package:united_areechola/notification_service/notification_service.dart'
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   try {
     if (kIsWeb) {
+      // ✅ Web Firebase init
       await Firebase.initializeApp(
-          options: const FirebaseOptions(
-              apiKey: "AIzaSyAJbPzgyaa98sDmYoujVS-v5Nxj8b03ink",
-              authDomain: "unitedareechola.firebaseapp.com",
-              projectId: "unitedareechola",
-              storageBucket: "unitedareechola.appspot.com",
-              messagingSenderId: "1016786265689",
-              appId: "1:1016786265689:web:b078345a011b94e89c7348"));
-    } else if (Platform.isIOS) {
-      debugPrint('ios');
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.ios);
+        options: const FirebaseOptions(
+          apiKey: "AIzaSyAJbPzgyaa98sDmYoujVS-v5Nxj8b03ink",
+          authDomain: "unitedareechola.firebaseapp.com",
+          projectId: "unitedareechola",
+          storageBucket: "unitedareechola.appspot.com",
+          messagingSenderId: "1016786265689",
+          appId: "1:1016786265689:web:b078345a011b94e89c7348",
+        ),
+      );
+
+      // 🔥 IMPORTANT: disable persistence for iOS Safari stability
+      await FirebaseAuth.instance.setPersistence(Persistence.NONE);
     } else {
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.android);
+      // ✅ Mobile (Android + iOS)
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+
+      // Mobile persistence is safe
+      await FirebaseAuth.instance.setPersistence(Persistence.SESSION);
     }
   } catch (e) {
     debugPrint('Error Initializing Firebase: $e');
   }
 
-  await FirebaseNotificationService.initialize();
+  // ❌ Firebase Messaging background handler NOT for web
 
-  // Set background handler
+  await FirebaseNotificationService.initialize();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
   runApp(const ProviderScope(child: MyApp()));
 }
 

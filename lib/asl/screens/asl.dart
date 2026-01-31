@@ -1,5 +1,6 @@
 // Enhanced ASL Main Screen
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:united_areechola/asl/screens/season_tile.dart';
@@ -14,32 +15,32 @@ class Asl extends StatefulWidget {
 }
 
 class _AslState extends State<Asl> with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
+  // late AnimationController _animationController;
+  // late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-        parent: _animationController, curve: Curves.easeOutBack));
+    // _animationController = AnimationController(
+    //   duration: const Duration(milliseconds: 1000),
+    //   vsync: this,
+    // );
+    // _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    //   CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    // );
+    // _slideAnimation = Tween<Offset>(
+    //   begin: const Offset(0, 0.3),
+    //   end: Offset.zero,
+    // ).animate(CurvedAnimation(
+    //     parent: _animationController, curve: Curves.easeOutBack));
 
-    _animationController.forward();
+    // _animationController.forward();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    // _animationController.dispose();
     super.dispose();
   }
 
@@ -94,91 +95,62 @@ class _AslState extends State<Asl> with TickerProviderStateMixin {
   }
 
   Widget _buildHeader() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            // Main Title
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                      width: 2,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.sports_soccer_rounded,
-                    color: Colors.white,
-                    size: 32,
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          // Main Title
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 2,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'ASL LEAGUE',
-                      style: GoogleFonts.inter(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                    Text(
-                      'Areechola Sports League',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white.withOpacity(0.9),
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ],
+                child: const Icon(
+                  Icons.sports_soccer_rounded,
+                  color: Colors.white,
+                  size: 32,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'ASL LEAGUE',
+                    style: GoogleFonts.inter(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  Text(
+                    'Areechola Sports League',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white.withOpacity(0.9),
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
 
-            const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-            // Stats Row
-       
-          ],
-        ),
+          // Stats Row
+        ],
       ),
-    );
-  }
-
-  Widget _buildStatItem(IconData icon, String label, String sublabel) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        Text(
-          sublabel,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w400,
-            color: Colors.white.withOpacity(0.8),
-          ),
-        ),
-      ],
     );
   }
 
@@ -209,76 +181,84 @@ class _AslState extends State<Asl> with TickerProviderStateMixin {
 
         final seasons = snapshot.data!;
 
-        return SlideTransition(
-          position: _slideAnimation,
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'League Seasons',
-                  style: GoogleFonts.inter(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'League Seasons',
+                style: GoogleFonts.inter(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
                 ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      int crossAxisCount;
-                      if (constraints.maxWidth < 600) {
-                        crossAxisCount = 1; // Mobile
-                      } else if (constraints.maxWidth < 1200) {
-                        crossAxisCount = 2; // Tablet
-                      } else {
-                        crossAxisCount = 3; // Desktop
-                      }
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    int crossAxisCount;
+                    if (constraints.maxWidth < 600) {
+                      crossAxisCount = 1; // Mobile
+                    } else if (constraints.maxWidth < 1200) {
+                      crossAxisCount = 2; // Tablet
+                    } else {
+                      crossAxisCount = 3; // Desktop
+                    }
 
-                      return GridView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: seasons.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          crossAxisCount: crossAxisCount,
-                          childAspectRatio: 1.3,
-                        ),
-                        itemBuilder: (context, index) {
-                          return TweenAnimationBuilder<double>(
-                            duration:
-                                Duration(milliseconds: 300 + (index * 100)),
-                            tween: Tween(begin: 0.0, end: 1.0),
-                            builder: (context, value, child) {
-                              return Transform.scale(
-                                scale: value,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => TeamDetails(
-                                          seasonModel: seasons[index],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: EnhancedSeasonTile(
-                                    seasonModel: seasons[index],
-                                  ),
+                    return GridView.builder(
+                      physics: kIsWeb
+                          ? const ClampingScrollPhysics() // ✅ smoother on web
+                          : const BouncingScrollPhysics(), // ✅ nice on mobile
+
+                      itemCount: seasons.length,
+
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        crossAxisCount: crossAxisCount,
+                        childAspectRatio: 1.3,
+                      ),
+
+                      itemBuilder: (context, index) {
+                        final tile = GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TeamDetails(
+                                  seasonModel: seasons[index],
                                 ),
-                              );
-                            },
-                          );
-                        },
-                      );
-                    },
-                  ),
+                              ),
+                            );
+                          },
+                          child: EnhancedSeasonTile(
+                            seasonModel: seasons[index],
+                          ),
+                        );
+
+                        // 🚀 WEB: NO ANIMATION (FAST)
+                        if (kIsWeb) return tile;
+
+                        // 🎨 MOBILE: ANIMATION
+                        return TweenAnimationBuilder<double>(
+                          duration: Duration(milliseconds: 300 + (index * 100)),
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          builder: (context, value, child) {
+                            return Transform.scale(
+                              scale: value,
+                              child: child,
+                            );
+                          },
+                          child: tile,
+                        );
+                      },
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },

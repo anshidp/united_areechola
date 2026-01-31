@@ -94,492 +94,172 @@ class _AddManagerState extends ConsumerState<AddManager>
     var h = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.topRight,
-            radius: 1.5,
-            colors: [
-              Color(0xFF1E3A8A),
-              Color(0xFF0A0E27),
-              Color(0xFF000000),
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(w * 0.02),
+          child: Column(
+            children: [
+              // Header Section (same as AddTeams)
+              _buildHeaderSection(w),
+              SizedBox(height: w * 0.03),
+
+              // Main Form Card
+              _buildFormCard(w, h),
             ],
-          ),
-        ),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Center(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(w * 0.02),
-              child: Column(
-                children: [
-                  // Animated Header
-
-                  SizedBox(height: w * 0.03),
-
-                  // Main Card
-                  _buildMainCard(w, h),
-
-                  SizedBox(height: w * 0.02),
-
-                  // Stats Cards
-                ],
-              ),
-            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildMainCard(double w, double h) {
+  Widget _buildHeaderSection(double w) {
     return Container(
-      width: w * 0.5,
-      constraints: const BoxConstraints(maxWidth: 600),
-      padding: EdgeInsets.all(w * 0.03),
+      width: double.infinity,
+      padding: EdgeInsets.all(w * 0.025),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            Colors.grey.shade50,
-            Colors.white,
-          ],
         ),
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(w * 0.02),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 30,
-            offset: const Offset(0, 15),
-            spreadRadius: 5,
-          ),
-          BoxShadow(
-            color: const Color(0xFF4ECDC4).withOpacity(0.2),
-            blurRadius: 40,
-            offset: const Offset(-10, -10),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
-        border: Border.all(
-          color: Colors.white.withOpacity(0.8),
-          width: 2,
-        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(w * 0.015),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(w * 0.01),
+            ),
+            child: Icon(
+              Icons.person_add,
+              color: Colors.white,
+              size: w * 0.03,
+            ),
+          ),
+          SizedBox(width: w * 0.02),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Manager Management',
+                style: GoogleFonts.poppins(
+                  fontSize: w * 0.022,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                'Add and manage managers efficiently',
+                style: GoogleFonts.poppins(
+                  fontSize: w * 0.012,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormCard(double w, double h) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(w * 0.03),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(w * 0.025),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 25,
+            offset: const Offset(0, 15),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Card Header with Animation
+          // Title
           Row(
             children: [
-              TweenAnimationBuilder(
-                tween: Tween<double>(begin: 0, end: 1),
-                duration: const Duration(milliseconds: 800),
-                builder: (context, double value, child) {
-                  return Transform.rotate(
-                    angle: value * 2 * 3.14159,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFF6B6B), Color(0xFFFFE66D)],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFF6B6B).withOpacity(0.3),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.person_add,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                  );
-                },
+              Container(
+                padding: EdgeInsets.all(w * 0.01),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4F46E5).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(w * 0.008),
+                ),
+                child: Icon(
+                  Icons.person_add,
+                  color: const Color(0xFF4F46E5),
+                  size: w * 0.02,
+                ),
               ),
-              SizedBox(width: w * 0.02),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Add New Manager',
-                      style: GoogleFonts.inter(
-                        fontSize: w * 0.020,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF2D3748),
-                      ),
-                    ),
-                    Text(
-                      'Create a new team manager profile',
-                      style: GoogleFonts.inter(
-                        fontSize: w * 0.011,
-                        color: const Color(0xFF718096),
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
+              SizedBox(width: w * 0.015),
+              Text(
+                "Add New Manager",
+                style: GoogleFonts.poppins(
+                  fontSize: w * 0.02,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1E293B),
                 ),
               ),
             ],
-          ),
-
-          SizedBox(height: w * 0.025),
-
-          // Animated Divider
-          TweenAnimationBuilder(
-            tween: Tween<double>(begin: 0, end: 1),
-            duration: const Duration(milliseconds: 1200),
-            builder: (context, double value, child) {
-              return Container(
-                height: 3,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(2),
-                  gradient: LinearGradient(
-                    stops: [0, value, value, 1],
-                    colors: const [
-                      Color(0xFF4ECDC4),
-                      Color(0xFF4ECDC4),
-                      Colors.transparent,
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-
-          SizedBox(height: w * 0.025),
-
-          // Form Fields
-          _buildEnhancedDropdown(
-            label: "Select Season",
-            hint: "Choose a season",
-            value: ref.watch(selectSeason),
-            items: ref.watch(seasons).entries.map((season) {
-              return DropdownMenuItem<String>(
-                value: season.key,
-                child: Text(season.value),
-              );
-            }).toList(),
-            onChanged: (value) {
-              ref.read(selectSeason.notifier).state = value;
-            },
-            w: w,
-            icon: Icons.calendar_month,
-            gradientColors: [const Color(0xFF667EEA), const Color(0xFF764BA2)],
-          ),
-
-          SizedBox(height: w * 0.02),
-
-          _buildEnhancedTextField(
-            controller: managernameController,
-            label: "Manager Name",
-            hint: "Enter manager's full name",
-            icon: Icons.person,
-            w: w,
-            gradientColors: [const Color(0xFFFF9A9E), const Color(0xFFFAD0C4)],
           ),
 
           SizedBox(height: w * 0.03),
 
-          // Action Buttons Row
+          // Fields Row
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildSecondaryButton(
-                'Clear Form',
-                Icons.refresh,
-                onPressed: _clearForm,
-                w: w,
+              // Season
+              Expanded(
+                child: _buildModernDropdownField(
+                  label: "Season",
+                  icon: Icons.calendar_today,
+                  value: ref.watch(selectSeason),
+                  items: ref.watch(seasons).entries.map((pos) {
+                    return DropdownMenuItem<String>(
+                      value: pos.key,
+                      child: Text(pos.value),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    ref.read(selectSeason.notifier).state = value;
+                  },
+                ),
               ),
-              SizedBox(width: w * 0.01),
-              _buildPrimaryButton(w, h),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+              SizedBox(width: w * 0.02),
 
-  Widget _buildStatCard(
-      String title, String value, IconData icon, Color color, double w) {
-    return TweenAnimationBuilder(
-      tween: Tween<double>(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 800),
-      builder: (context, double animationValue, child) {
-        return Transform.scale(
-          scale: animationValue,
-          child: Container(
-            padding: EdgeInsets.all(w * 0.02),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  color.withOpacity(0.8),
-                  color,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withOpacity(0.4),
-                  blurRadius: 15,
-                  offset: const Offset(0, 8),
+              // Manager Name
+              Expanded(
+                child: _buildModernTextField(
+                  label: "Manager Name",
+                  hint: "Enter manager name",
+                  icon: Icons.person,
+                  controller: managernameController,
                 ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Icon(icon, color: Colors.white, size: 32),
-                SizedBox(height: 12),
-                Text(
-                  value,
-                  style: GoogleFonts.inter(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: Colors.white.withOpacity(0.9),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildEnhancedTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    required double w,
-    required List<Color> gradientColors,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            fontSize: w * 0.012,
-            color: const Color(0xFF2D3748),
-          ),
-        ),
-        SizedBox(height: w * 0.008),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            gradient: LinearGradient(
-              colors: gradientColors.map((c) => c.withOpacity(0.1)).toList(),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: gradientColors.first.withOpacity(0.2),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
               ),
             ],
           ),
-          child: TextFormField(
-            controller: controller,
-            style: GoogleFonts.inter(
-              fontSize: w * 0.012,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF2D3748),
-            ),
-            decoration: InputDecoration(
-              hintText: hint,
-              prefixIcon: Container(
-                margin: const EdgeInsets.all(12),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: gradientColors),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, size: 20, color: Colors.white),
-              ),
-              hintStyle: GoogleFonts.inter(
-                color: const Color(0xFFA0AEC0),
-                fontSize: w * 0.011,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: BorderSide(
-                  color: gradientColors.first.withOpacity(0.3),
-                  width: 2,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: BorderSide(
-                  color: gradientColors.first,
-                  width: 2,
-                ),
-              ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildEnhancedDropdown({
-    required String label,
-    required String hint,
-    required String? value,
-    required List<DropdownMenuItem<String>> items,
-    required Function(String?) onChanged,
-    required double w,
-    required IconData icon,
-    required List<Color> gradientColors,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            fontSize: w * 0.012,
-            color: const Color(0xFF2D3748),
-          ),
-        ),
-        SizedBox(height: w * 0.008),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            gradient: LinearGradient(
-              colors: gradientColors.map((c) => c.withOpacity(0.1)).toList(),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: gradientColors.first.withOpacity(0.2),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: gradientColors.first.withOpacity(0.3),
-                width: 2,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(right: 15),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: gradientColors),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, size: 20, color: Colors.white),
-                ),
-                Expanded(
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      isExpanded: true,
-                      hint: Text(
-                        hint,
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFFA0AEC0),
-                          fontSize: w * 0.011,
-                        ),
-                      ),
-                      value: value?.isEmpty == true ? null : value,
-                      items: items.map((item) {
-                        return DropdownMenuItem<String>(
-                          value: item.value,
-                          child: Text(
-                            item.child
-                                .toString()
-                                .replaceAll('Text("', '')
-                                .replaceAll('")', ''),
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF2D3748),
-                              fontSize: w * 0.011,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: onChanged,
-                      dropdownColor: Colors.white,
-                      icon: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: gradientColors.first,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+          SizedBox(height: w * 0.04),
 
-  Widget _buildPrimaryButton(double w, double h) {
-    return TweenAnimationBuilder(
-      tween: Tween<double>(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 600),
-      builder: (context, double value, child) {
-        return Transform.scale(
-          scale: value,
-          child: Container(
-            height: 60,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFFFFE66D),
-                  Color(0xFF4ECDC4),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFF6B6B).withOpacity(0.5),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
+          // Button
+          SizedBox(
+            width: double.infinity,
+            height: w * 0.04,
             child: ElevatedButton(
               onPressed: () async {
                 if (managernameController.text.trim().isEmpty) {
@@ -588,6 +268,7 @@ class _AddManagerState extends ConsumerState<AddManager>
 
                 final confirm = await alert(
                     context, "Do you want to add this manager?", w, h);
+
                 if (confirm) {
                   final managerModel = ManagerModel(
                     managerName: managernameController.text.trim(),
@@ -595,89 +276,185 @@ class _AddManagerState extends ConsumerState<AddManager>
                     delete: false,
                     seasonName: ref.read(selectSeason) ?? "",
                   );
+
                   ref.read(aslRepositoryProvider).addNewManager(
                         managerModel,
                         ref.read(selectSeason) ?? "",
                       );
+
                   showSnackBarToast(
                       context, "Manager added successfully", "green");
                   _clearForm();
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
+                backgroundColor: const Color(0xFF4F46E5),
+                foregroundColor: Colors.white,
+                elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(w * 0.015),
                 ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.add_circle,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                  SizedBox(width: 12),
+                  Icon(Icons.add_circle, size: w * 0.015),
+                  SizedBox(width: w * 0.01),
                   Text(
                     "Add Manager",
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: w * 0.014,
-                      letterSpacing: 0.5,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      fontSize: w * 0.013,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
-  Widget _buildSecondaryButton(
-    String text,
-    IconData icon, {
-    required VoidCallback onPressed,
-    required double w,
+  Widget _buildModernTextField({
+    required String label,
+    required String hint,
+    required IconData icon,
+    required TextEditingController controller,
   }) {
-    return SizedBox(
-      height: 60,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(
-            color: Color(0xFF4ECDC4),
-            width: 2,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF374151),
+            fontSize: MediaQuery.of(context).size.width * 0.012,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          backgroundColor: const Color(0xFF4ECDC4).withOpacity(0.1),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: const Color(0xFF4ECDC4),
-              size: 20,
+        SizedBox(height: MediaQuery.of(context).size.width * 0.008),
+        Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: controller,
+            style: GoogleFonts.poppins(
+              color: const Color(0xFF1E293B),
+              fontSize: MediaQuery.of(context).size.width * 0.011,
             ),
-            SizedBox(width: 4),
-            Text(
-              text,
-              style: GoogleFonts.inter(
-                color: const Color(0xFF4ECDC4),
-                fontWeight: FontWeight.w600,
-                fontSize: w * 0.012,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: GoogleFonts.poppins(
+                color: const Color(0xFF9CA3AF),
+                fontSize: MediaQuery.of(context).size.width * 0.011,
+              ),
+              prefixIcon: Icon(
+                icon,
+                color: const Color(0xFF4F46E5),
+                size: MediaQuery.of(context).size.width * 0.015,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(
+                    MediaQuery.of(context).size.width * 0.01),
+                borderSide:
+                    const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(
+                    MediaQuery.of(context).size.width * 0.01),
+                borderSide:
+                    const BorderSide(color: Color(0xFF4F46E5), width: 2),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width * 0.015,
+                vertical: MediaQuery.of(context).size.width * 0.012,
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
+    );
+  }
+
+  Widget _buildModernDropdownField({
+    required String label,
+    required IconData icon,
+    required String? value,
+    required List<DropdownMenuItem<String>> items,
+    required Function(String?) onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF374151),
+            fontSize: MediaQuery.of(context).size.width * 0.012,
+          ),
+        ),
+        SizedBox(height: MediaQuery.of(context).size.width * 0.008),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius:
+                BorderRadius.circular(MediaQuery.of(context).size.width * 0.01),
+            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              hint: Row(
+                children: [
+                  Icon(
+                    icon,
+                    color: const Color(0xFF9CA3AF),
+                    size: MediaQuery.of(context).size.width * 0.015,
+                  ),
+                  SizedBox(width: MediaQuery.of(context).size.width * 0.01),
+                  Text(
+                    "Select $label",
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF9CA3AF),
+                      fontSize: MediaQuery.of(context).size.width * 0.011,
+                    ),
+                  ),
+                ],
+              ),
+              value: value,
+              icon: Icon(
+                Icons.keyboard_arrow_down,
+                color: const Color(0xFF4F46E5),
+                size: MediaQuery.of(context).size.width * 0.02,
+              ),
+              items: items,
+              onChanged: onChanged,
+              padding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width * 0.015,
+                vertical: MediaQuery.of(context).size.width * 0.005,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

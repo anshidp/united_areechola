@@ -1,10 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:united_areechola/asl_admin/model/season_model.dart';
-import 'package:united_areechola/asl_admin/screens/add_season_images.dart';
 import 'package:united_areechola/utils/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -21,24 +21,37 @@ class _SeasonOverViewState extends State<SeasonOverView>
   Map<String, dynamic> seasonImagestitle = {};
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  late Future<List<SeasonAward>> awardsFuture;
 
-  void getSeasonImageTitle() async {
-    final seasonSnap = await FirebaseFirestore.instance
+  Future<List<SeasonAward>> _fetchAwards() async {
+    final snap = await FirebaseFirestore.instance
         .collection(FirebaseConstants.seasonCollection)
         .doc(widget.seasonModel?.id)
+        .collection('awards')
+        .where('enabled', isEqualTo: true)
         .get();
-    if (seasonSnap.exists) {
-      final seasonData = seasonSnap.data() ?? {};
-      if (seasonData.containsKey("images")) {
-        seasonImagestitle = seasonData['images'] ?? {};
-      }
-    }
+
+    return snap.docs.map((e) => SeasonAward.fromMap(e.data())).toList();
+  }
+
+  AwardType _mapAwardType(String key) {
+    if (key.toLowerCase().contains('winner')) return AwardType.champion;
+    if (key.toLowerCase().contains('runner')) return AwardType.runner;
+    if (key.toLowerCase().contains('best')) return AwardType.individual;
+    return AwardType.special;
+  }
+
+  IconData _mapAwardIcon(String key) {
+    if (key.toLowerCase().contains('goal')) return Icons.sports_soccer;
+    if (key.toLowerCase().contains('player')) return Icons.person;
+    if (key.toLowerCase().contains('manager')) return Icons.person_4;
+    return Icons.emoji_events;
   }
 
   @override
   void initState() {
     super.initState();
-    getSeasonImageTitle();
+    awardsFuture = _fetchAwards();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -62,60 +75,94 @@ class _SeasonOverViewState extends State<SeasonOverView>
   @override
   Widget build(BuildContext context) {
     double scrWidth = MediaQuery.of(context).size.width;
-    double scrHeight = MediaQuery.of(context).size.height;
-    final seasonImages = widget.seasonModel?.images;
-
-    final awards = [
-      AwardItem("WINNERS", seasonImages?.winners ?? "", AwardType.champion,
-          Icons.emoji_events),
-      AwardItem("RUNNERS", seasonImages?.runners ?? "", AwardType.runner,
-          Icons.military_tech),
-      AwardItem("BEST PLAYER", seasonImages?.bestplayer ?? "",
-          AwardType.individual, Icons.person_4),
-      AwardItem("BEST DEFENDER", seasonImages?.bestdefender ?? "",
-          AwardType.individual, Icons.shield),
-      AwardItem("BEST GOALKEEPER", seasonImages?.bestkeeper ?? "",
-          AwardType.individual, Icons.sports_soccer),
-      AwardItem("TOP SCORER", seasonImages?.topScorer ?? "",
-          AwardType.individual, Icons.sports),
-      AwardItem("BEST GOAL", seasonImages?.bestgoal ?? "", AwardType.special,
-          Icons.videocam),
-      AwardItem("MAN OF THE MATCH", seasonImages?.finalManofMatch ?? "",
-          AwardType.special, Icons.star),
-      AwardItem("BEST MANAGER", seasonImages?.bestmanager ?? "",
-          AwardType.individual, Icons.person),
-      AwardItem("FAIR PLAY", seasonImages?.fairPlaye ?? "", AwardType.special,
-          Icons.handshake),
-      AwardItem("MATCH OFFICIAL", seasonImages?.matchOfficial ?? "",
-          AwardType.special, Icons.how_to_reg),
-    ];
+    // double scrHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F172A),
-              Color(0xFF1E293B),
-              Color(0xFF334155),
-            ],
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF0F172A),
+                Color(0xFF1E293B),
+                Color(0xFF334155),
+              ],
+            ),
           ),
-        ),
-        child: CustomScrollView(
-          slivers: [
-            _buildHeader(scrWidth),
-            _buildAwardsGrid(awards, scrWidth),
-          ],
-        ),
-      ),
+          child: CustomScrollView(
+            slivers: [
+              _buildHeader(scrWidth),
+              FutureBuilder<List<SeasonAward>>(
+                future: awardsFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(40),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    );
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(40),
+                        child: Center(
+                          child: Text(
+                            "No awards added for this season",
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  final awards = snapshot.data!
+                      .map(
+                        (a) => AwardItem(
+                          a.title.toUpperCase(),
+                          a.imageUrl,
+                          _mapAwardType(a.title),
+                          _mapAwardIcon(a.title),
+                        ),
+                      )
+                      .toList();
+                  awards.sort((a, b) {
+                    return _awardPriority(a.title).compareTo(
+                      _awardPriority(b.title),
+                    );
+                  });
+
+                  /// ✅ THIS IS THE KEY LINE
+                  return _buildAwardsGrid(awards, scrWidth);
+                },
+              ),
+            ],
+          )),
     );
+  }
+
+  int _awardPriority(String key) {
+    final k = key.toLowerCase();
+
+    if (k.contains('winner')) return 1;
+    if (k.contains('runner')) return 2;
+    if (k.contains('best')) return 3;
+    if (k.contains('topscorer')) return 4;
+
+    // Match officials LAST
+    if (k.toLowerCase().contains('official') || k.contains('referee')) {
+      return 100;
+    }
+
+    return 50;
   }
 
   SliverAppBar _buildHeader(double scrWidth) {
     return SliverAppBar(
-      expandedHeight: 200,
+      expandedHeight: 100,
       floating: false,
       pinned: false,
       backgroundColor: Colors.transparent,
@@ -139,7 +186,7 @@ class _SeasonOverViewState extends State<SeasonOverView>
               children: [
                 const SizedBox(height: 20),
                 // Trophy icon with glow effect
-              
+
                 const SizedBox(height: 20),
                 Text(
                   "ASL ${widget.seasonModel?.seasonName}".toUpperCase(),
@@ -160,37 +207,6 @@ class _SeasonOverViewState extends State<SeasonOverView>
                     letterSpacing: 1,
                   ),
                 ),
-                const SizedBox(height: 20),
-                if (kIsWeb || true) // Enable for both web and mobile
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (ctx) => AwardGridPage(
-                              seasonId: widget.seasonModel?.id ?? "",
-                              awardTitles: seasonImagestitle,
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.add_photo_alternate, size: 18),
-                      label: const Text("Manage Awards"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3B82F6),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        elevation: 8,
-                        shadowColor: const Color(0xFF3B82F6).withOpacity(0.3),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
@@ -409,6 +425,8 @@ class _EnhancedAwardCardState extends State<EnhancedAwardCard>
                   height: double.infinity,
                   child: widget.award.imageUrl.isNotEmpty
                       ? CachedNetworkImage(
+                          imageRenderMethodForWeb:
+                              ImageRenderMethodForWeb.HttpGet,
                           imageUrl: widget.award.imageUrl,
                           fit: BoxFit.cover,
                           placeholder: (context, url) => Container(

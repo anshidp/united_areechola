@@ -147,47 +147,48 @@ class _BloodGroupsState extends State<BloodGroups>
             ),
             child: Column(
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.bloodtype_rounded,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Blood Donation Network',
-                            style: GoogleFonts.poppins(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Connect with donors in your area',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.9),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
+                // Row(
+                //   children: [
+                //     Container(
+                //       padding: const EdgeInsets.all(16),
+                //       decoration: BoxDecoration(
+                //         color: Colors.white.withOpacity(0.2),
+                //         borderRadius: BorderRadius.circular(16),
+                //       ),
+                //       child: const Icon(
+                //         Icons.bloodtype_rounded,
+                //         color: Colors.white,
+                //         size: 32,
+                //       ),
+                //     ),
+                //     const SizedBox(width: 16),
+                //     Expanded(
+                //       child: Column(
+                //         crossAxisAlignment: CrossAxisAlignment.start,
+                //         children: [
+                //           Text(
+                //             'Blood Donation Network',
+                //             style: GoogleFonts.poppins(
+                //               fontSize: 20,
+                //               fontWeight: FontWeight.w600,
+                //               color: Colors.white,
+                //             ),
+                //           ),
+                //           const SizedBox(height: 4),
+                //           Text(
+                //             'Connect with donors in your area',
+                //             style: GoogleFonts.poppins(
+                //               fontSize: 14,
+                //               color: Colors.white.withOpacity(0.9),
+                //             ),
+                //           ),
+                //         ],
+                //       ),
+                //     ),
+                 
+                //   ],
+                // ),
+                // const SizedBox(height: 20),
                 _buildBloodGroupFilter(),
               ],
             ),
@@ -464,7 +465,6 @@ class _BloodGroupsState extends State<BloodGroups>
                   ],
                 ),
                 const SizedBox(height: 4),
-               
               ],
             ),
           ),

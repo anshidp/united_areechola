@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:united_areechola/asl_admin/model/goal_model.dart';
 import 'package:united_areechola/asl_admin/model/manager_model.dart';
 import 'package:united_areechola/asl_admin/model/match_model.dart';
@@ -13,7 +18,7 @@ import 'package:united_areechola/utils/constants.dart';
 
 final aslRepositoryProvider = Provider((ref) => AslAdminRepository());
 
-enum PlayerTypes { goals, assist, yellow, red , penalty}
+enum PlayerTypes { goals, assist, yellow, red, penalty }
 
 abstract class AslAdminRepo {
   Future<void> addNewPlayer(PlayerModel playerModel, String season);
@@ -27,18 +32,17 @@ abstract class AslAdminRepo {
   Future<Map<String, dynamic>> getTeams(String seasonId);
   Future<List<PlayerModel>> getTeamPlayers(
       String teamA, String teamB, String seasonId);
-  void updatePlayerStat({
-    required String playerId,
-    required String type,
-    required String matchId,
-    required String selectTeam,
-    required String teamA,
-    required String assister,
-    required String seasonId,
-    required String teamB,
-    required String playerName,
-    required bool isPenaltyGoal
-  });
+  void updatePlayerStat(
+      {required String playerId,
+      required String type,
+      required String matchId,
+      required String selectTeam,
+      required String teamA,
+      required String assister,
+      required String seasonId,
+      required String teamB,
+      required String playerName,
+      required bool isPenaltyGoal});
   void updateMatchStat(
       {required String matchId,
       required String teamA,
@@ -289,18 +293,17 @@ class AslAdminRepository implements AslAdminRepo {
   }
 
   @override
-  void updatePlayerStat({
-    required String playerId,
-    required String type,
-    required String matchId,
-    required String selectTeam,
-    required String seasonId,
-    required String assister,
-    required String teamA,
-    required String teamB,
-    required String playerName,
-    required bool isPenaltyGoal
-  }) async {
+  Future<void> updatePlayerStat(
+      {required String playerId,
+      required String type,
+      required String matchId,
+      required String selectTeam,
+      required String seasonId,
+      required String assister,
+      required String teamA,
+      required String teamB,
+      required String playerName,
+      required bool isPenaltyGoal}) async {
     try {
       final goalRef = FirebaseFirestore.instance
           .collection(FirebaseConstants.seasonCollection)
@@ -315,7 +318,9 @@ class AslAdminRepository implements AslAdminRepo {
           .collection('matches')
           .doc(matchId);
 
-      if (type == PlayerTypes.goals.name || type == PlayerTypes.assist.name) {
+      if (type == PlayerTypes.goals.name ||
+          type == PlayerTypes.assist.name ||
+          type == PlayerTypes.penalty.name) {
         if (selectTeam == teamA) {
           matchRef.update({"teamAscore": FieldValue.increment(1)});
         } else if (selectTeam == teamB) {
@@ -363,6 +368,7 @@ class AslAdminRepository implements AslAdminRepo {
         default:
       }
     } catch (e, s) {
+      print(s.toString());
       debugPrint(e.toString());
       // debugPrint(s.toString());
     }
@@ -720,5 +726,60 @@ class AslAdminRepository implements AslAdminRepo {
       return doc.docs.map((e) => GoalModel.fromMap(e.data())).toList();
     }
     return [];
+  }
+
+  Future<String?> uploadAwardImage() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+      if (image == null) return null;
+
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('season_awards')
+          .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+      UploadTask uploadTask;
+
+      if (kIsWeb) {
+        // 🌐 Web
+        final Uint8List bytes = await image.readAsBytes();
+        uploadTask = ref.putData(
+          bytes,
+          SettableMetadata(contentType: 'image/jpeg'),
+        );
+      } else {
+        // 📱 Mobile
+        uploadTask = ref.putFile(
+          File(image.path),
+          SettableMetadata(contentType: 'image/jpeg'),
+        );
+      }
+
+      final snapshot = await uploadTask;
+      return await snapshot.ref.getDownloadURL();
+    } catch (e) {
+      debugPrint("Upload Award Image Error: $e");
+      return null;
+    }
+  }
+
+  Future<void> addSeasonAward({
+    required String seasonId,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      final awardSnap = db
+          .collection(FirebaseConstants.seasonCollection)
+          .doc(seasonId)
+          .collection('awards')
+          .doc();
+      data['id'] = awardSnap.id;
+      awardSnap.set(data);
+    } catch (e) {
+      debugPrint("Add Season Award Error: $e");
+      rethrow;
+    }
   }
 }

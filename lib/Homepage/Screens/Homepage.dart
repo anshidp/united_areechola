@@ -16,6 +16,7 @@ import 'package:united_areechola/constants.dart';
 import 'package:united_areechola/events/screens/addevents.dart';
 import 'package:united_areechola/kuri/screens/kuri_homescreen.dart';
 import 'package:united_areechola/subcriptions/screens/add_subcription.dart';
+import 'package:united_areechola/subcriptions/screens/report.dart';
 
 /// ERP VERSIONS
 String webVersion = "1.3.7";
@@ -53,6 +54,7 @@ class _HomeState extends ConsumerState<Home>
       label: 'Subscriptions',
       color: Color(0xFF8B5CF6),
     ),
+    
     NavigationItem(
       icon: Icon(
         Icons.bloodtype_rounded,
@@ -102,7 +104,7 @@ class _HomeState extends ConsumerState<Home>
     super.initState();
 
     _tabController =
-        TabController(vsync: this, length: kIsWeb ? 6 : 6, initialIndex: 0);
+        TabController(vsync: this, length: kIsWeb ? 8 : 6, initialIndex: 0);
 
     updateUserToken(userDataModel!);
   }
@@ -136,6 +138,7 @@ class _HomeState extends ConsumerState<Home>
                         AddUsers(),
                         //! subcription
                         AddSubcription(),
+                        SubscriptionReportPage(),
                         //! Events
                         AddEventsScreen(),
 
@@ -143,6 +146,7 @@ class _HomeState extends ConsumerState<Home>
                         AslAdmin(),
                         //! ASL
                         Asl(),
+                        KuriHomeScreen(),
                       ],
                     ),
                   ),

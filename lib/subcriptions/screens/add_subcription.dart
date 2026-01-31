@@ -12,6 +12,7 @@ import 'package:united_areechola/authentication/screens/splash_screen.dart';
 import 'package:united_areechola/common/common.dart';
 import 'package:united_areechola/constants.dart';
 import 'package:united_areechola/subcriptions/repository/repository.dart';
+import 'package:united_areechola/subcriptions/screens/report.dart';
 
 class AddSubcription extends ConsumerStatefulWidget {
   const AddSubcription({super.key});
@@ -29,7 +30,7 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
 
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
-  late Animation<double> _fadeAnimation;
+  // late Animation<double> _fadeAnimation;
 
   List<User> userslist = [];
   Map<String, dynamic> users = {};
@@ -44,36 +45,29 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
   Map<String, double> subcriptionamount = {};
 
   @override
+  @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
 
-    // _slideAnimation = Tween<double>(
-    //   begin: 0.3,
-    //   end: 0.0,
-    // ).animate(CurvedAnimation(
-    //   parent: _animationController,
-    //   curve: Curves.easeOutBack,
-    // ));
+    if (!kIsWeb) {
+      // 🎨 Mobile only animation
+      _animationController = AnimationController(
+        duration: const Duration(milliseconds: 1000),
+        vsync: this,
+      );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+      _animationController.forward();
+    }
 
+    // 🚀 Data loading (safe on all platforms)
     getUsers();
-    _animationController.forward();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    if (!kIsWeb) {
+      _animationController.dispose();
+    }
     super.dispose();
   }
 
@@ -140,50 +134,104 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          return FadeTransition(
-            opacity: _fadeAnimation,
-            child: SingleChildScrollView(
+      body: kIsWeb
+          // 🚀 WEB VERSION (NO ANIMATION, FAST)
+          ? SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(
-                    height: 30,
-                  ),
-                  // Header Title
+                  const SizedBox(height: 30),
                   _buildPageHeader(),
-                  const SizedBox(height: 24),
-
-                  // Stats Cards
+                  const SizedBox(height: 14),
+                  if (isAdmin)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        _buildActionButton(
+                          onTap: () async {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SubscriptionReportPage(),
+                              ),
+                            );
+                          },
+                          title: 'Subscription Report',
+                          isPrimary: true,
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 14),
                   _buildStatsSection(),
                   const SizedBox(height: 24),
-
-                  // Add Subscription Form or Button
                   _buildSubscriptionForm(addevent, isTablet),
                   const SizedBox(height: 24),
-
-                  // Month Selector and Unpaid Users
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(child: _buildUnpaidUsersSection(size)),
-                      const SizedBox(width: 20),
-                      _buildMonthSelector(),
+                      const SizedBox(width: 10),
+                      Expanded(child: _buildMonthSelector()),
                     ],
                   ),
                   const SizedBox(height: 24),
-
-                  // Transactions Table
                   _buildTransactionsTable(),
                 ],
               ),
+            )
+
+          // 🎨 MOBILE VERSION (WITH ANIMATION)
+          : AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 30),
+                      _buildPageHeader(),
+                      const SizedBox(height: 14),
+                      if (isAdmin)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            _buildActionButton(
+                              onTap: () async {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        SubscriptionReportPage(),
+                                  ),
+                                );
+                              },
+                              title: 'Subscription Report',
+                              isPrimary: true,
+                            ),
+                          ],
+                        ),
+                      const SizedBox(height: 14),
+                      _buildStatsSection(),
+                      const SizedBox(height: 24),
+                      _buildSubscriptionForm(addevent, isTablet),
+                      const SizedBox(height: 24),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: _buildUnpaidUsersSection(size)),
+                          const SizedBox(width: 10),
+                          Expanded(child: _buildMonthSelector()),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      _buildTransactionsTable(),
+                    ],
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 
@@ -334,7 +382,7 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
           AnimatedFlipCounter(
             fractionDigits: 1,
             prefix: "₹",
-            duration: Duration(seconds: 1),
+            duration: Duration(milliseconds: 100),
             value: double.tryParse(value) ?? 0.0,
             textStyle: GoogleFonts.inter(
               fontSize: 24,
@@ -467,8 +515,8 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
                     clearOption: false,
                     enableSearch: true,
                     dropDownList: users.entries
-                        .map((e) =>
-                            DropDownValueModel(name: e.value, value: e.key))
+                        .map((e) => DropDownValueModel(
+                            name: e.value.toUpperCase(), value: e.key))
                         .toList(),
                     onChanged: (value) {
                       ref.read(dropdownselectedItem.notifier).state =
@@ -713,14 +761,14 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
                     child:
                         Icon(Icons.warning, color: Colors.red[600], size: 20),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 5),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Unpaid Users",
                         style: GoogleFonts.inter(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: Colors.grey[800],
                         ),
@@ -741,6 +789,7 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
               Container(
                 constraints: BoxConstraints(maxHeight: size.height * 0.3),
                 child: ListView.separated(
+                  padding: EdgeInsets.zero,
                   itemCount: unpaidusers.data?.length ?? 0,
                   separatorBuilder: (context, index) =>
                       const SizedBox(height: 8),
@@ -758,7 +807,7 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
                             backgroundColor: Colors.red[600],
                             radius: 4,
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               unpaidusers.data?[index].toUpperCase() ?? "",
@@ -784,7 +833,7 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
 
   Widget _buildMonthSelector() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -808,31 +857,59 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
             ),
           ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: selectedMonth,
-                onChanged: _updateSelectedMonth,
-                icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
-                items: _generateMonthList()
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
+          GestureDetector(
+            onTap: () async {
+              final pickedDate = await showDatePicker(
+                context: context,
+                initialDate: selectedMonth != null
+                    ? DateTime.parse("$selectedMonth-01")
+                    : DateTime.now(),
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2100),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: Color(0xFF4F46E5), // header color
+                        onPrimary: Colors.white,
+                        surface: Colors.white,
+                        onSurface: Colors.black,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+
+              if (pickedDate != null) {
+                // store only year-month (yyyy-MM)
+                final formattedMonth = DateFormat('yyyy-MM').format(pickedDate);
+
+                _updateSelectedMonth(formattedMonth);
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
                     child: Text(
-                      DateFormat('MMM yyyy')
-                          .format(DateTime.parse('$value-01')),
+                      selectedMonth == null
+                          ? "Select month"
+                          : DateFormat('MMM yyyy')
+                              .format(DateTime.parse('$selectedMonth-01')),
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         color: Colors.grey[700],
                       ),
                     ),
-                  );
-                }).toList(),
+                  ),
+                  Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
+                ],
               ),
             ),
           ),

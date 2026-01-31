@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -80,7 +81,10 @@ class _CommittieScreenState extends State<CommittieScreen> {
     return Column(
       children: [
         CircleAvatar(
-          backgroundImage: CachedNetworkImageProvider(image),
+          backgroundImage: CachedNetworkImageProvider(
+            image,
+            imageRenderMethodForWeb: ImageRenderMethodForWeb.HttpGet,
+          ),
           radius: 55,
         ),
         const SizedBox(

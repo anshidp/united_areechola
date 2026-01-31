@@ -48,9 +48,11 @@ class _SideMenuState extends State<SideMenu>
     MenuItem(Icons.dashboard_rounded, "Dashboard", 0),
     MenuItem(Icons.person_add_alt_1_rounded, "Add Users", 1),
     MenuItem(Icons.subscriptions_rounded, "Add Subscription", 2),
-    MenuItem(Icons.event_rounded, "Add Events", 3),
-    MenuItem(Icons.admin_panel_settings_rounded, "ASL ADMIN", 4),
-    MenuItem(Icons.sports_soccer_rounded, "ASL", 5),
+    MenuItem(Icons.receipt_long_outlined, "Subscription Report", 3),
+    MenuItem(Icons.event_rounded, "Add Events", 4),
+    MenuItem(Icons.admin_panel_settings_rounded, "ASL ADMIN", 5),
+    MenuItem(Icons.sports_soccer_rounded, "ASL", 6),
+    MenuItem(Icons.celebration, "Kuri", 7),
   ];
 
   @override

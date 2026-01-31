@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:united_areechola/Models/notification_model.dart';
 import 'package:united_areechola/asl_admin/model/match_model.dart';
 import 'package:united_areechola/asl_admin/model/player_model.dart';
 import 'package:united_areechola/asl_admin/repository/repository.dart';
@@ -642,24 +643,33 @@ class _UpdateMatchState extends ConsumerState<UpdateMatch>
   Future<void> _updateMatch() async {
     try {
       String dialogContent = "";
+      String notificationBody = "";
+
       final event = ref.read(selectEvent);
+      final playerName = ref.read(selectPlayerName) ?? "";
+      final assisterName = ref.read(selectAssisterName) ?? "";
       if (event == PlayerTypes.penalty.name) {
         dialogContent =
             "പെനാൽറ്റി അടിച്ചത് ${ref.read(selectPlayerName)} ആണെന്ന് ഉറപ്പാണോ ?";
+        notificationBody = "🅿️ $playerName scored a penalty";
       } else if (event == PlayerTypes.goals.name) {
         dialogContent =
             "ഗോൾ അടിച്ചത് ${ref.read(selectPlayerName)} ഉം അസിസ്റ്റ് ചെയ്തത് ${ref.read(selectAssisterName)} ഉം ആണെന്ന് ഉറപ്പാണോ ?";
+        notificationBody =
+            "⚽ $playerName scored a goal (Assist: $assisterName)";
       } else if (event == PlayerTypes.yellow.name) {
         dialogContent =
             "yellow കാർഡ് കിട്ടിയത് ${ref.read(selectPlayerName)} ആണെന്ന് ഉറപ്പാണോ ?";
+        notificationBody = "🟨 $playerName received a yellow card";
       } else if (event == PlayerTypes.red.name) {
         dialogContent =
             "red കാർഡ് കിട്ടിയത് ${ref.read(selectPlayerName)} ആണെന്ന് ഉറപ്പാണോ ?";
+        notificationBody = "🟥 $playerName received a red card";
       }
       final confirm = await _showConfirmDialog(content: dialogContent);
       if (!confirm) return;
 
-      ref.read(aslRepositoryProvider).updatePlayerStat(
+      await ref.read(aslRepositoryProvider).updatePlayerStat(
             isPenaltyGoal: (ref.read(selectEvent) == PlayerTypes.penalty.name),
             playerName: ref.read(selectPlayerName) ?? "",
             seasonId: widget.matchModel.seasonId,
@@ -671,6 +681,15 @@ class _UpdateMatchState extends ConsumerState<UpdateMatch>
             playerId: ref.read(selectPlayer) ?? "",
             type: ref.read(selectEvent) ?? "",
           );
+      final notification = NotificationModel(
+        delete: false,
+        title: "Match update",
+        body: notificationBody,
+        createdDate: DateTime.now(),
+      );
+      final noti = db.collection('notification').doc();
+      notification.id = noti.id;
+      noti.set(notification.toMap());
 
       if (mounted) {
         showSnackBarToast(context, "Match updated successfully", "green");

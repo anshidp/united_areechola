@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:united_areechola/asl_admin/screens/add_awards.dart';
 import 'package:united_areechola/asl_admin/screens/add_manager.dart';
 import 'package:united_areechola/asl_admin/screens/add_matches.dart';
 import 'package:united_areechola/asl_admin/screens/add_players.dart';
@@ -20,6 +21,7 @@ class _AslAdminState extends State<AslAdmin> {
     AddTeams(),
     AddPlayers(),
     AddMatches(),
+    AddAwardScreen()
   ];
   @override
   Widget build(BuildContext context) {
@@ -43,6 +45,7 @@ class _AslAdminState extends State<AslAdmin> {
                   Tab(icon: Icon(Icons.star), text: "Add Teams"),
                   Tab(icon: Icon(Icons.group), text: "Add Players"),
                   Tab(icon: Icon(Icons.group), text: "Add Matches"),
+                  Tab(icon: Icon(Icons.star), text: "Add Awards"),
                 ]),
             Expanded(
                 child: TabBarView(

@@ -82,4 +82,3 @@ exports.sendSubcriptionNotification=onDocumentCreated("/notification/{documentId
         
       }
     });
-

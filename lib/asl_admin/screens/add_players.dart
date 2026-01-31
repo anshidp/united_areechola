@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:united_areechola/asl_admin/model/player_model.dart';
@@ -138,118 +137,168 @@ class _AddPlayersState extends ConsumerState<AddPlayers>
     var h = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: FadeTransition(
         opacity: _fadeAnimation,
-        child: CustomScrollView(
-          slivers: [
-            // Modern App Bar
-            SliverAppBar(
-              expandedHeight: 120,
-              floating: false,
-              pinned: true,
-              backgroundColor: const Color(0xFF1E293B),
-              flexibleSpace: FlexibleSpaceBar(
-                title: Text(
-                  'Player Management',
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                background: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF1E293B), Color(0xFF334155)],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(w * 0.02),
+          child: Column(
+            children: [
+              // Header
+              _buildHeaderSection(w),
+              SizedBox(height: w * 0.03),
 
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(w * 0.02),
-                child: Column(
-                  children: [
-                    // Player Form Card
-                    _buildPlayerFormCard(w, h),
-                    SizedBox(height: w * 0.03),
+              // Form
+              _buildPlayerFormCard(w, h),
+              SizedBox(height: w * 0.03),
 
-                    // Search and Filters
-                    _buildSearchAndFilters(w),
-                    SizedBox(height: w * 0.02),
+              // Search
+              _buildSearchBar(w),
+              SizedBox(height: w * 0.02),
 
-                    // Players List
-                    _buildPlayersDataTable(w, h),
-                  ],
-                ),
-              ),
-            ),
-          ],
+              // Table
+              _buildPlayersTable(w, h),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(double w) {
+    return Container(
+      padding: EdgeInsets.all(w * 0.02),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(w * 0.02),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: searchController,
+        onChanged: (value) {
+          ref.read(searchPlayers.notifier).state = value;
+        },
+        decoration: InputDecoration(
+          hintText: "Search players...",
+          prefixIcon: const Icon(Icons.search),
+          border: InputBorder.none,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderSection(double w) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(w * 0.025),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(w * 0.02),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(w * 0.015),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(w * 0.01),
+            ),
+            child: Icon(
+              Icons.people_alt,
+              color: Colors.white,
+              size: w * 0.03,
+            ),
+          ),
+          SizedBox(width: w * 0.02),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Player Management',
+                style: GoogleFonts.poppins(
+                  fontSize: w * 0.022,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                'Add and manage players efficiently',
+                style: GoogleFonts.poppins(
+                  fontSize: w * 0.012,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildPlayerFormCard(double w, double h) {
     return Container(
-      padding: EdgeInsets.all(w * 0.025),
+      width: double.infinity,
+      padding: EdgeInsets.all(w * 0.03),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF334155), width: 1),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(w * 0.025),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 25,
+            offset: const Offset(0, 15),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with icon
+          // Title
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(w * 0.01),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF10B981), Color(0xFF059669)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFF4F46E5).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(w * 0.008),
                 ),
-                child:
-                    const Icon(Icons.person_add, color: Colors.white, size: 24),
+                child: Icon(
+                  ref.watch(isPlayerEdit) ? Icons.edit : Icons.add,
+                  color: const Color(0xFF4F46E5),
+                  size: w * 0.02,
+                ),
               ),
               SizedBox(width: w * 0.015),
               Text(
                 ref.watch(isPlayerEdit) ? "Update Player" : "Add New Player",
-                style: GoogleFonts.inter(
-                  fontSize: w * 0.018,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                style: GoogleFonts.poppins(
+                  fontSize: w * 0.02,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1E293B),
                 ),
               ),
-              const Spacer(),
-              if (ref.watch(isPlayerEdit))
-                TextButton.icon(
-                  onPressed: _clearForm,
-                  icon: const Icon(Icons.clear, color: Color(0xFF64748B)),
-                  label: Text(
-                    'Cancel',
-                    style: GoogleFonts.inter(color: const Color(0xFF64748B)),
-                  ),
-                ),
             ],
           ),
-          SizedBox(height: w * 0.025),
 
-          // Player Image Upload Section
+          SizedBox(height: w * 0.03),
+
+          // Upload
           Center(
             child: GestureDetector(
               onTap: () async {
@@ -263,147 +312,120 @@ class _AddPlayersState extends ConsumerState<AddPlayers>
                   shape: BoxShape.circle,
                   gradient: downloadUrl != null
                       ? null
-                      : const LinearGradient(
-                          colors: [Color(0xFF334155), Color(0xFF475569)],
+                      : LinearGradient(
+                          colors: [
+                            const Color(0xFF4F46E5).withOpacity(0.1),
+                            const Color(0xFF7C3AED).withOpacity(0.1),
+                          ],
                         ),
                   border: Border.all(
-                    color: const Color(0xFF10B981),
-                    width: 3,
+                    color: const Color(0xFF4F46E5).withOpacity(0.3),
+                    width: 2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF10B981).withOpacity(0.3),
+                      color: Colors.black.withOpacity(0.1),
                       blurRadius: 15,
-                      spreadRadius: 2,
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
-                child: isUploading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF10B981),
-                          strokeWidth: 2,
-                        ),
+                child: downloadUrl != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(w * 0.06),
+                        child: Image.network(downloadUrl!, fit: BoxFit.cover),
                       )
-                    : downloadUrl != null
-                        ? ClipOval(
-                            child: Image.network(
-                              downloadUrl!,
-                              fit: BoxFit.cover,
-                              width: w * 0.12,
-                              height: w * 0.12,
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.cloud_upload_outlined,
+                              size: w * 0.035, color: const Color(0xFF4F46E5)),
+                          SizedBox(height: w * 0.005),
+                          Text(
+                            'Upload Photo',
+                            style: GoogleFonts.poppins(
+                              fontSize: w * 0.01,
+                              color: const Color(0xFF64748B),
                             ),
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.camera_alt,
-                                color: Color(0xFF64748B),
-                                size: 32,
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Upload',
-                                style: GoogleFonts.inter(
-                                  color: const Color(0xFF64748B),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
                           ),
+                        ],
+                      ),
               ),
             ),
           ),
-          SizedBox(height: w * 0.025),
 
-          // Form Fields Grid
+          SizedBox(height: w * 0.04),
+
+          // Fields
           Row(
             children: [
-              // Left Column
               Expanded(
                 child: Column(
                   children: [
-                    _buildModernDropdown(
-                      context,
+                    _buildModernDropdownField(
                       label: "Season",
-                      hint: "Select Season",
+                      icon: Icons.calendar_today,
                       value: ref.watch(selectSeason),
-                      items: ref
-                          .watch(seasons)
-                          .entries
-                          .map((season) => DropdownMenuItem(
-                              value: season.key, child: Text(season.value)))
-                          .toList(),
+                      items: ref.watch(seasons).entries.map((s) {
+                        return DropdownMenuItem<String>(
+                            value: s.key, child: Text(s.value));
+                      }).toList(),
                       onChanged: (value) async {
                         ref.read(selectSeason.notifier).state = value;
                         ref.read(teams.notifier).state = await ref
                             .read(aslRepositoryProvider)
                             .getTeams(value ?? "");
                       },
-                      w: w,
                     ),
                     SizedBox(height: w * 0.02),
                     _buildModernTextField(
-                      nameController,
-                      "Player Name",
-                      "Enter player name",
-                      Icons.person,
-                      w,
+                      label: "Player Name",
+                      hint: "Enter player name",
+                      icon: Icons.person,
+                      controller: nameController,
                     ),
                     SizedBox(height: w * 0.02),
                     _buildModernTextField(
-                      auctionPriceController,
-                      "Auction Price",
-                      "Enter auction price",
-                      Icons.attach_money,
-                      w,
-                      isNumber: true,
+                      label: "Auction Price",
+                      hint: "Enter price",
+                      icon: Icons.attach_money,
+                      controller: auctionPriceController,
                     ),
                   ],
                 ),
               ),
               SizedBox(width: w * 0.03),
-              // Right Column
               Expanded(
                 child: Column(
                   children: [
-                    _buildModernDropdown(
-                      context,
+                    _buildModernDropdownField(
                       label: "Position",
-                      hint: "Select Position",
+                      icon: Icons.sports_soccer,
                       value: ref.watch(selectPossition),
                       items: possitoins
-                          .map((pos) =>
-                              DropdownMenuItem(value: pos, child: Text(pos)))
+                          .map(
+                              (p) => DropdownMenuItem(value: p, child: Text(p)))
                           .toList(),
                       onChanged: (value) {
                         ref.read(selectPossition.notifier).state = value;
-                        if ((value ?? "").contains("()")) {
-                          String? shortForm =
-                              (value ?? "").split('(')[1].replaceAll(')', '');
+                        if ((value ?? "").contains("(")) {
                           ref.read(selectPossitionShort.notifier).state =
-                              shortForm;
+                              value!.split('(')[1].replaceAll(')', '');
                         }
                       },
-                      w: w,
                     ),
                     SizedBox(height: w * 0.02),
-                    _buildModernDropdown(
-                      context,
+                    _buildModernDropdownField(
                       label: "Team",
-                      hint: "Select Team",
+                      icon: Icons.groups,
                       value: ref.watch(selectTeam),
-                      items: ref
-                          .watch(teams)
-                          .entries
-                          .map((team) => DropdownMenuItem(
-                              value: team.key, child: Text(team.value)))
-                          .toList(),
+                      items: ref.watch(teams).entries.map((t) {
+                        return DropdownMenuItem<String>(
+                            value: t.key, child: Text(t.value));
+                      }).toList(),
                       onChanged: (value) {
                         ref.read(selectTeam.notifier).state = value;
                       },
-                      w: w,
                     ),
                   ],
                 ),
@@ -411,12 +433,12 @@ class _AddPlayersState extends ConsumerState<AddPlayers>
             ],
           ),
 
-          SizedBox(height: w * 0.03),
+          SizedBox(height: w * 0.04),
 
-          // Action Button
+          // Button
           SizedBox(
             width: double.infinity,
-            height: 56,
+            height: w * 0.04,
             child: ElevatedButton(
               onPressed: () async {
                 if (nameController.text.trim().isEmpty) {
@@ -425,7 +447,6 @@ class _AddPlayersState extends ConsumerState<AddPlayers>
                   return showSnackBarToast(
                       context, "Please choose position", "red");
                 }
-
                 if (ref.read(isPlayerEdit)) {
                   final confirm = await alert(
                       context, "Do you want to update this player?", w, h);
@@ -442,7 +463,6 @@ class _AddPlayersState extends ConsumerState<AddPlayers>
                         ref.read(selectPlayerModel)?.playerId ?? "",
                         copy!,
                         ref.read(selectSeason) ?? "");
-
                     if (context.mounted) {
                       showSnackBarToast(
                           context,
@@ -485,26 +505,23 @@ class _AddPlayersState extends ConsumerState<AddPlayers>
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF10B981),
+                backgroundColor: const Color(0xFF4F46E5),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
                 elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(w * 0.015),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    ref.watch(isPlayerEdit) ? Icons.update : Icons.add,
-                    size: 20,
-                  ),
-                  SizedBox(width: 8),
+                  Icon(ref.watch(isPlayerEdit) ? Icons.update : Icons.add),
+                  SizedBox(width: w * 0.01),
                   Text(
                     ref.watch(isPlayerEdit) ? "Update Player" : "Add Player",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: w * 0.013,
                     ),
                   ),
                 ],
@@ -516,100 +533,220 @@ class _AddPlayersState extends ConsumerState<AddPlayers>
     );
   }
 
-  Widget _buildSearchAndFilters(double w) {
-    return Container(
-      padding: EdgeInsets.all(w * 0.02),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF334155)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: searchController,
-              onChanged: (value) {
-                ref.read(searchPlayers.notifier).state = value;
-              },
-              style: GoogleFonts.inter(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Search players...',
-                hintStyle: GoogleFonts.inter(color: const Color(0xFF64748B)),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF334155)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF334155)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF10B981)),
-                ),
-                filled: true,
-                fillColor: const Color(0xFF0F172A),
+  Widget _buildModernTextField({
+    required String label,
+    required String hint,
+    required IconData icon,
+    required TextEditingController controller,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF374151),
+            fontSize: MediaQuery.of(context).size.width * 0.012,
+          ),
+        ),
+        SizedBox(height: MediaQuery.of(context).size.width * 0.008),
+        Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: controller,
+            style: GoogleFonts.poppins(
+              color: const Color(0xFF1E293B),
+              fontSize: MediaQuery.of(context).size.width * 0.011,
+            ),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: GoogleFonts.poppins(
+                color: const Color(0xFF9CA3AF),
+                fontSize: MediaQuery.of(context).size.width * 0.011,
+              ),
+              prefixIcon: Icon(
+                icon,
+                color: const Color(0xFF4F46E5),
+                size: MediaQuery.of(context).size.width * 0.015,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(
+                    MediaQuery.of(context).size.width * 0.01),
+                borderSide:
+                    const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(
+                    MediaQuery.of(context).size.width * 0.01),
+                borderSide:
+                    const BorderSide(color: Color(0xFF4F46E5), width: 2),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width * 0.015,
+                vertical: MediaQuery.of(context).size.width * 0.012,
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildPlayersDataTable(double w, double h) {
+  Widget _buildModernDropdownField({
+    required String label,
+    required IconData icon,
+    required String? value,
+    required List<DropdownMenuItem<String>> items,
+    required Function(String?) onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF374151),
+            fontSize: MediaQuery.of(context).size.width * 0.012,
+          ),
+        ),
+        SizedBox(height: MediaQuery.of(context).size.width * 0.008),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius:
+                BorderRadius.circular(MediaQuery.of(context).size.width * 0.01),
+            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              hint: Row(
+                children: [
+                  Icon(
+                    icon,
+                    color: const Color(0xFF9CA3AF),
+                    size: MediaQuery.of(context).size.width * 0.015,
+                  ),
+                  SizedBox(width: MediaQuery.of(context).size.width * 0.01),
+                  Text(
+                    "Select $label",
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF9CA3AF),
+                      fontSize: MediaQuery.of(context).size.width * 0.011,
+                    ),
+                  ),
+                ],
+              ),
+              value: value,
+              icon: Icon(
+                Icons.keyboard_arrow_down,
+                color: const Color(0xFF4F46E5),
+                size: MediaQuery.of(context).size.width * 0.02,
+              ),
+              items: items,
+              onChanged: onChanged,
+              padding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width * 0.015,
+                vertical: MediaQuery.of(context).size.width * 0.005,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPlayersTable(double w, double h) {
     return Consumer(
       builder: (context, ref, _) {
         ref.watch(searchPlayers);
+
         return StreamBuilder<List<PlayerModel>>(
           stream: FirebaseFirestore.instance
               .collection("seasons")
               .doc(ref.read(selectSeason))
               .collection('players')
               .where('delete', isEqualTo: false)
-              .where('search',
-                  arrayContains: ref.read(searchPlayers).isEmpty
-                      ? null
-                      : ref.read(searchPlayers).toUpperCase())
+              .where(
+                'search',
+                arrayContains: ref.read(searchPlayers).isEmpty
+                    ? null
+                    : ref.read(searchPlayers).toUpperCase(),
+              )
               .snapshots()
               .map((event) => event.docs
                   .map((e) => PlayerModel.fromMap(e.data()))
                   .toList()),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(color: Color(0xFF10B981)),
+              return Container(
+                height: 200,
+                alignment: Alignment.center,
+                child: const CircularProgressIndicator(
+                  color: Color(0xFF4F46E5),
+                ),
               );
             }
 
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return Container(
-                height: 200,
+                width: double.infinity,
+                padding: EdgeInsets.all(w * 0.05),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(w * 0.02),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 25,
+                      offset: const Offset(0, 15),
+                    ),
+                  ],
                 ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.sports_soccer,
-                        size: 48,
-                        color: const Color(0xFF64748B),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.people_outline,
+                      size: w * 0.08,
+                      color: const Color(0xFF9CA3AF),
+                    ),
+                    SizedBox(height: w * 0.02),
+                    Text(
+                      'No Players Found',
+                      style: GoogleFonts.poppins(
+                        fontSize: w * 0.018,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF374151),
                       ),
-                      SizedBox(height: 16),
-                      Text(
-                        'No players found',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF64748B),
-                          fontSize: 16,
-                        ),
+                    ),
+                    SizedBox(height: w * 0.01),
+                    Text(
+                      'Start by adding your first player',
+                      style: GoogleFonts.poppins(
+                        fontSize: w * 0.012,
+                        color: const Color(0xFF9CA3AF),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               );
             }
@@ -618,143 +755,189 @@ class _AddPlayersState extends ConsumerState<AddPlayers>
 
             return Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF334155)),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(w * 0.02),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 25,
+                    offset: const Offset(0, 15),
+                  ),
+                ],
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: DataTable(
-                  columnSpacing: 40,
-                  horizontalMargin: 24,
-                  dataRowMinHeight: 72,
-                  dataRowMaxHeight: 72,
-                  headingRowHeight: 60,
-                  headingTextStyle: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.white,
-                  ),
-                  dataTextStyle: GoogleFonts.inter(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
-                    color: const Color(0xFFE2E8F0),
-                  ),
-                  headingRowColor:
-                      WidgetStateProperty.all(const Color(0xFF0F172A)),
-                  columns: const [
-                    DataColumn(label: Text("No.")),
-                    DataColumn(label: Text("Photo")),
-                    DataColumn(label: Text("Player Name")),
-                    DataColumn(label: Text("Position")),
-                    DataColumn(label: Text("Team")),
-                    DataColumn(label: Text("Price")),
-                    DataColumn(label: Text("Actions")),
-                  ],
-                  rows: List.generate(
-                    players.length,
-                    (index) {
-                      final player = players[index];
-                      final isEven = index.isEven;
-                      return DataRow(
-                        color: WidgetStateProperty.all(
-                          isEven
-                              ? const Color(0xFF0F172A)
-                              : const Color(0xFF1E293B),
-                        ),
-                        cells: [
-                          DataCell(Text('${index + 1}')),
-                          DataCell(
-                            player.image.isNotEmpty
-                                ? Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: const Color(0xFF10B981),
-                                        width: 2,
-                                      ),
-                                      image: DecorationImage(
-                                        image: NetworkImage(player.image),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  )
-                                : Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: const Color(0xFF334155),
-                                      border: Border.all(
-                                        color: const Color(0xFF64748B),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: const Icon(
-                                      Icons.person,
-                                      color: Color(0xFF94A3B8),
-                                      size: 24,
-                                    ),
-                                  ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Table Header
+                  Container(
+                    padding: EdgeInsets.all(w * 0.02),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+                      ),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(w * 0.02),
+                        topRight: Radius.circular(w * 0.02),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.table_chart, color: Colors.white),
+                        SizedBox(width: w * 0.01),
+                        Text(
+                          "Players Overview",
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: w * 0.016,
+                            fontWeight: FontWeight.bold,
                           ),
-                          DataCell(Text(player.name)),
-                          DataCell(Text(player.possition)),
-                          DataCell(Text(ref.read(teams)[player.teamId] ?? "")),
-                          DataCell(Text('₹${player.price.toStringAsFixed(0)}')),
-                          DataCell(
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  onPressed: () {
-                                    ref.read(isPlayerEdit.notifier).state =
-                                        true;
-                                    ref.read(selectPlayerModel.notifier).state =
-                                        player;
-                                    downloadUrl = player.image;
-                                    auctionPriceController.text =
-                                        player.price.toString();
-                                    nameController.text = player.name;
-                                    ref.read(selectPossition.notifier).state =
-                                        player.possition;
-                                    ref.read(selectTeam.notifier).state =
-                                        player.teamId;
-                                  },
-                                  icon: const Icon(
-                                    Icons.edit,
-                                    color: Color(0xFF3B82F6),
-                                    size: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Data Table
+                  ClipRRect(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(w * 0.02),
+                      bottomRight: Radius.circular(w * 0.02),
+                    ),
+                    child: DataTable(
+                      dataRowMinHeight: 70,
+                      dataRowMaxHeight: 80,
+                      dividerThickness: 0,
+                      headingTextStyle: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
+                        fontSize: w * 0.012,
+                        color: Colors.white,
+                      ),
+                      dataTextStyle: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w500,
+                        fontSize: w * 0.011,
+                        color: const Color(0xFF374151),
+                      ),
+                      headingRowColor: WidgetStateProperty.all(
+                        const Color(0xFF6366F1),
+                      ),
+                      columns: const [
+                        DataColumn(label: Text("Sl No")),
+                        DataColumn(label: Text("Photo")),
+                        DataColumn(label: Text("Player Name")),
+                        DataColumn(label: Text("Position")),
+                        DataColumn(label: Text("Team")),
+                        DataColumn(label: Text("Price")),
+                        DataColumn(label: Text("Actions")),
+                      ],
+                      rows: List.generate(players.length, (index) {
+                        final player = players[index];
+
+                        return DataRow(
+                          color: WidgetStateProperty.all(
+                            index.isEven
+                                ? const Color(0xFFF8FAFC)
+                                : Colors.white,
+                          ),
+                          cells: [
+                            // Sl No
+                            DataCell(Text('${index + 1}')),
+
+                            // Photo
+                            DataCell(
+                              Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: const Color(0xFF4F46E5)
+                                        .withOpacity(0.3),
+                                    width: 2,
                                   ),
-                                  tooltip: 'Edit Player',
+                                  image: player.image.isNotEmpty
+                                      ? DecorationImage(
+                                          image: NetworkImage(player.image),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : null,
                                 ),
-                                IconButton(
-                                  onPressed: () async {
-                                    final confirm = await alert(
+                                child: player.image.isEmpty
+                                    ? Icon(
+                                        Icons.person,
+                                        color: const Color(0xFF4F46E5)
+                                            .withOpacity(0.5),
+                                        size: w * 0.02,
+                                      )
+                                    : null,
+                              ),
+                            ),
+
+                            // Name
+                            DataCell(Text(
+                              player.name,
+                              style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600),
+                            )),
+
+                            // Position
+                            DataCell(Text(player.possition)),
+
+                            // Team
+                            DataCell(
+                                Text(ref.read(teams)[player.teamId] ?? "-")),
+
+                            // Price
+                            DataCell(
+                                Text("₹${player.price.toStringAsFixed(0)}")),
+
+                            // Actions
+                            DataCell(
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildActionButton(
+                                    icon: Icons.edit,
+                                    color: Colors.blue,
+                                    onTap: () {
+                                      ref.read(isPlayerEdit.notifier).state =
+                                          true;
+                                      ref
+                                          .read(selectPlayerModel.notifier)
+                                          .state = player;
+                                      downloadUrl = player.image;
+                                      auctionPriceController.text =
+                                          player.price.toString();
+                                      nameController.text = player.name;
+                                      ref.read(selectPossition.notifier).state =
+                                          player.possition;
+                                      ref.read(selectTeam.notifier).state =
+                                          player.teamId;
+                                    },
+                                  ),
+                                  SizedBox(width: w * 0.005),
+                                  _buildActionButton(
+                                    icon: Icons.delete,
+                                    color: Colors.red,
+                                    onTap: () async {
+                                      final confirm = await alert(
                                         context,
                                         "Do you want to delete this player?",
                                         w,
-                                        h);
-                                    if (confirm) {
-                                      // Add delete functionality here
-                                    }
-                                  },
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Color(0xFFEF4444),
-                                    size: 20,
+                                        h,
+                                      );
+                                      if (confirm) {
+                                        // 🔴 Add delete logic here
+                                      }
+                                    },
                                   ),
-                                  tooltip: 'Delete Player',
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      );
-                    },
+                          ],
+                        );
+                      }),
+                    ),
                   ),
-                ),
+                ],
               ),
             );
           },
@@ -763,127 +946,26 @@ class _AddPlayersState extends ConsumerState<AddPlayers>
     );
   }
 
-  Widget _buildModernTextField(
-    TextEditingController controller,
-    String label,
-    String hint,
-    IconData icon,
-    double w, {
-    bool isNumber = false,
+  Widget _buildActionButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w500,
-            fontSize: 14,
-            color: const Color(0xFFE2E8F0),
-          ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
         ),
-        SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-          inputFormatters:
-              isNumber ? [FilteringTextInputFormatter.digitsOnly] : [],
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-          ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: GoogleFonts.inter(
-              color: const Color(0xFF64748B),
-              fontSize: 14,
-            ),
-            prefixIcon: Icon(icon, size: 20, color: const Color(0xFF64748B)),
-            filled: true,
-            fillColor: const Color(0xFF0F172A),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF334155)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF334155)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
-            ),
-          ),
+        child: Icon(
+          icon,
+          color: color,
+          size: 16,
         ),
-      ],
-    );
-  }
-
-  Widget _buildModernDropdown(
-    BuildContext context, {
-    required String label,
-    required String hint,
-    required String? value,
-    required List<DropdownMenuItem<String>> items,
-    required Function(String?) onChanged,
-    required double w,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w500,
-            fontSize: 14,
-            color: const Color(0xFFE2E8F0),
-          ),
-        ),
-        SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0F172A),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF334155)),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              isExpanded: true,
-              hint: Text(
-                hint,
-                style: GoogleFonts.inter(
-                  color: const Color(0xFF64748B),
-                  fontSize: 14,
-                ),
-              ),
-              value: value,
-              items: items.map((item) {
-                return DropdownMenuItem<String>(
-                  value: item.value,
-                  child: Text(
-                    item.child
-                        .toString()
-                        .replaceAll('Text("', '')
-                        .replaceAll('")', ''),
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
-                  ),
-                );
-              }).toList(),
-              onChanged: onChanged,
-              dropdownColor: const Color(0xFF1E293B),
-              icon: const Icon(
-                Icons.keyboard_arrow_down,
-                color: Color(0xFF64748B),
-              ),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
