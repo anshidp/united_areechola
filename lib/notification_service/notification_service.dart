@@ -1,5 +1,5 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart'; // Required for kIsWeb
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class FirebaseNotificationService {
@@ -8,14 +8,48 @@ class FirebaseNotificationService {
   static final FlutterLocalNotificationsPlugin
       _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
-  // Call this in main.dart before runApp()
+  // Call this in main.dart
   static Future<void> initialize() async {
-    await Firebase.initializeApp();
-    await _setupNotificationChannels();
+    // ❌ REMOVED: await Firebase.initializeApp();
+    // (Already initialized in main.dart)
+
+    // ✅ Request Permissions (Required for Web/iOS)
     await _requestPermissions();
-    await _initializeLocalNotifications();
+
+    // ✅ Mobile-specific setup (Channels & Local Notifications)
+    if (!kIsWeb) {
+    await FirebaseMessaging.instance.requestPermission();
+    }
+    if (!kIsWeb) {
+      
+      await _setupNotificationChannels();
+      await _initializeLocalNotifications();
+    }
+
+    // ✅ Print Token (Now supports Web VAPID)
+    await _logToken();
+
+    // ✅ Setup Handlers
     await _setupInteractedMessage();
     _setupForegroundMessageHandler();
+  }
+
+  static Future<void> _logToken() async {
+    try {
+      String? token;
+      if (kIsWeb) {
+        // ⚠️ REPLACE WITH YOUR VAPID KEY FROM FIREBASE CONSOLE
+        token = await _firebaseMessaging.getToken(
+          vapidKey:
+              "BJ8Wclfm-WkXbyrTW6li67Gp4fkP69CTNBHNJOMT4lgvgkKRg",
+        );
+      } else {
+        token = await _firebaseMessaging.getToken();
+      }
+      print('FCM Token: $token');
+    } catch (e) {
+      print('Error getting token: $e');
+    }
   }
 
   static Future<void> _setupNotificationChannels() async {
@@ -40,11 +74,7 @@ class FirebaseNotificationService {
       provisional: false,
     );
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('User granted permission');
-    } else {
-      print('User declined or has not accepted permission');
-    }
+    print('User granted permission: ${settings.authorizationStatus}');
   }
 
   static Future<void> _initializeLocalNotifications() async {
@@ -67,21 +97,22 @@ class FirebaseNotificationService {
     await _flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        // Handle notification tap here
         _handleNotificationTap(response.payload);
       },
     );
   }
 
   static Future<void> _setupInteractedMessage() async {
-    // Handle notification when app is terminated
+    // Get any messages which caused the application to open from a terminated state
     RemoteMessage? initialMessage =
         await _firebaseMessaging.getInitialMessage();
+
     if (initialMessage != null) {
       _handleMessage(initialMessage);
     }
 
-    // Handle notification when app is in background
+    // Also handle any interaction when the app is in the background via a
+    // Stream listener
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
   }
 
@@ -92,7 +123,17 @@ class FirebaseNotificationService {
 
       if (message.notification != null) {
         print('Message also contained a notification: ${message.notification}');
-        _showNotification(message);
+
+        // On Web, browsers usually don't show "system" notifications
+        // if the tab is in focus. You might want to show a custom UI (Dialog/Snackbar).
+        // For Mobile, we use Local Notifications.
+        if (!kIsWeb) {
+          _showNotification(message);
+        } else {
+          // Optional: Add Web-specific UI handling (e.g., Snackbar)
+          print(
+              'Web foreground notification received: ${message.notification?.title}');
+        }
       }
     });
   }
@@ -103,7 +144,7 @@ class FirebaseNotificationService {
 
     if (notification != null && android != null) {
       AndroidNotificationDetails androidPlatformChannelSpecifics =
-          AndroidNotificationDetails(
+          const AndroidNotificationDetails(
         'high_importance_channel',
         'High Importance Notifications',
         channelDescription: 'This channel is used for important notifications.',
@@ -137,14 +178,11 @@ class FirebaseNotificationService {
 
   static void _handleMessage(RemoteMessage message) {
     print('Handling a message: ${message.messageId}');
-    // Handle the message (navigate to specific screen, etc.)
     _handleNotificationTap(message.data.toString());
   }
 
   static void _handleNotificationTap(String? payload) {
-    // Handle notification tap based on payload
     print('Notification tapped with payload: $payload');
-    // Example: Navigate to specific screen using payload data
-    // You can use go_router, Navigator, or any other navigation solution
+    // Implement navigation logic here
   }
 }

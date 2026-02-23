@@ -51,7 +51,15 @@ class _TeamTableState extends State<TeamTable> {
           }
 
           final teams = (snapshot.data ?? [])
-            ..sort((a, b) => b.point.compareTo(a.point));
+            ..sort((a, b) {
+              // Sort by points first, then by goal difference
+              if (b.point != a.point) {
+                return b.point.compareTo(a.point);
+              }
+              final aGD = (a.goalsFor ?? 0) - (a.goalsAgainst ?? 0);
+              final bGD = (b.goalsFor ?? 0) - (b.goalsAgainst ?? 0);
+              return bGD.compareTo(aGD);
+            });
 
           final groupATeams = teams.where((team) => team.group == 'A').toList();
           final groupBTeams = teams.where((team) => team.group == 'B').toList();
@@ -60,8 +68,8 @@ class _TeamTableState extends State<TeamTable> {
             padding: EdgeInsets.all(16),
             child: Column(
               children: [
-                _buildSeasonHeader(),
-                SizedBox(height: 24),
+                // _buildSeasonHeader(),
+                // SizedBox(height: 24),
                 _buildGroupTable('Group A', groupATeams, Color(0xFF3B82F6)),
                 SizedBox(height: 24),
                 _buildGroupTable('Group B', groupBTeams, Color(0xFF10B981)),
@@ -76,10 +84,14 @@ class _TeamTableState extends State<TeamTable> {
   Widget _buildSeasonHeader() {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+          colors: [
+            Color(0xFF1E3A8A), // Deep blue
+            Color(0xFF3B82F6), // Bright blue
+            Color(0xFF8B5CF6), // Purple
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -185,52 +197,71 @@ class _TeamTableState extends State<TeamTable> {
             ),
           ),
 
-          // Table Header
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: Color(0xFFF8FAFC),
-              border: Border(
-                bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
-              ),
-            ),
-            child: Row(
-              children: [
-                SizedBox(width: 30),
-                Expanded(
-                  flex: 4,
-                  child: Text(
-                    'Team',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF64748B),
+          // Scrollable Table Content
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: BouncingScrollPhysics(),
+            child: IntrinsicWidth(
+              child: Column(
+                children: [
+                  // Table Header
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF8FAFC),
+                      border: Border(
+                        bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        SizedBox(width: 30),
+                        SizedBox(
+                          width: 200,
+                          child: Text(
+                            'Team',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                        _buildFixedHeaderCell('PL'),
+                        _buildFixedHeaderCell('W'),
+                        _buildFixedHeaderCell('D'),
+                        _buildFixedHeaderCell('L'),
+                        _buildFixedHeaderCell('GF'),
+                        _buildFixedHeaderCell('GA'),
+                        _buildFixedHeaderCell('GD'),
+                        _buildFixedHeaderCell('PTS'),
+                      ],
                     ),
                   ),
-                ),
-                _buildHeaderCell('PL'),
-                _buildHeaderCell('W'),
-                _buildHeaderCell('L'),
-                _buildHeaderCell('D'),
-                _buildHeaderCell('PTS'),
-              ],
-            ),
-          ),
 
-          // Team Rows
-          ListView.separated(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemCount: teams.length,
-            separatorBuilder: (context, index) => Divider(
-              height: 1,
-              color: Color(0xFFF1F5F9),
+                  // ✅ FIXED: Replaced ListView.separated with Column
+                  // This allows IntrinsicWidth to correctly calculate the width of the table
+                  Column(
+                    children: List.generate(teams.length, (index) {
+                      final team = teams[index];
+                      final position = index + 1;
+
+                      return Column(
+                        children: [
+                          _buildTeamRow(team, position, accentColor),
+                          // Add separator manually except for the last item
+                          if (index < teams.length - 1)
+                            Divider(
+                              height: 1,
+                              color: Color(0xFFF1F5F9),
+                            ),
+                        ],
+                      );
+                    }),
+                  ),
+                ],
+              ),
             ),
-            itemBuilder: (context, index) {
-              final team = teams[index];
-              final position = index + 1;
-              return _buildTeamRow(team, position, accentColor);
-            },
           ),
         ],
       ),
@@ -252,7 +283,27 @@ class _TeamTableState extends State<TeamTable> {
     );
   }
 
+  Widget _buildFixedHeaderCell(String text) {
+    return SizedBox(
+      width: 50,
+      child: Center(
+        child: Text(
+          text,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTeamRow(AslTeamModel team, int position, Color accentColor) {
+    final goalsFor = team.goalsFor ?? 0;
+    final goalsAgainst = team.goalsAgainst ?? 0;
+    final goalDifference = goalsFor - goalsAgainst;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
@@ -281,9 +332,9 @@ class _TeamTableState extends State<TeamTable> {
           ),
           SizedBox(width: 6),
 
-          // Team Info
-          Expanded(
-            flex: 4,
+          // Team Info - Fixed width
+          SizedBox(
+            width: 200,
             child: Row(
               children: [
                 Container(
@@ -323,13 +374,16 @@ class _TeamTableState extends State<TeamTable> {
             ),
           ),
 
-          _buildStatCell(team.playedMatch.toString()),
-          _buildStatCell(team.win.toString(),
+          _buildFixedStatCell(team.playedMatch.toString()),
+          _buildFixedStatCell(team.win.toString(),
               isHighlight: true, color: Color(0xFF10B981)),
-          _buildStatCell(team.lose.toString(),
+          _buildFixedStatCell(team.draw.toString()),
+          _buildFixedStatCell(team.lose.toString(),
               isHighlight: true, color: Color(0xFFEF4444)),
-          _buildStatCell(team.draw.toString()),
-          _buildPointsCell(team.point.toString(), accentColor),
+          _buildFixedStatCell(goalsFor.toString()),
+          _buildFixedStatCell(goalsAgainst.toString()),
+          _buildFixedGoalDifferenceCell(goalDifference),
+          _buildFixedPointsCell(team.point.toString(), accentColor),
         ],
       ),
     );
@@ -358,8 +412,124 @@ class _TeamTableState extends State<TeamTable> {
     );
   }
 
+  Widget _buildFixedStatCell(String value,
+      {bool isHighlight = false, Color? color}) {
+    return SizedBox(
+      width: 50,
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: isHighlight ? color?.withOpacity(0.1) : null,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isHighlight ? color : Color(0xFF475569),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoalDifferenceCell(int goalDifference) {
+    final isPositive = goalDifference > 0;
+    final isNegative = goalDifference < 0;
+    final displayValue = isPositive ? '+$goalDifference' : '$goalDifference';
+
+    return Expanded(
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: isPositive
+                ? Color(0xFF10B981).withOpacity(0.1)
+                : isNegative
+                    ? Color(0xFFEF4444).withOpacity(0.1)
+                    : Color(0xFF94A3B8).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            displayValue,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: isPositive
+                  ? Color(0xFF10B981)
+                  : isNegative
+                      ? Color(0xFFEF4444)
+                      : Color(0xFF64748B),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFixedGoalDifferenceCell(int goalDifference) {
+    final isPositive = goalDifference > 0;
+    final isNegative = goalDifference < 0;
+    final displayValue = isPositive ? '+$goalDifference' : '$goalDifference';
+
+    return SizedBox(
+      width: 50,
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: isPositive
+                ? Color(0xFF10B981).withOpacity(0.1)
+                : isNegative
+                    ? Color(0xFFEF4444).withOpacity(0.1)
+                    : Color(0xFF94A3B8).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            displayValue,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: isPositive
+                  ? Color(0xFF10B981)
+                  : isNegative
+                      ? Color(0xFFEF4444)
+                      : Color(0xFF64748B),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildPointsCell(String points, Color accentColor) {
     return Expanded(
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: accentColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            points,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFixedPointsCell(String points, Color accentColor) {
+    return SizedBox(
+      width: 50,
       child: Center(
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),

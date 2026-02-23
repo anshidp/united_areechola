@@ -7,10 +7,10 @@ final adduserRepositoryProvider = Provider((ref) => AddUserRepository());
 class AddUserRepository {
   Future<void> addUser(Usermodel usermodel) async {
     try {
-      final doc = FirebaseFirestore.instance.collection("users").doc();
+      final doc = FirebaseFirestore.instance.collection("subcriptionMembers").doc();
       usermodel.id = doc.id;
       FirebaseFirestore.instance
-          .collection("users")
+          .collection("subcriptionMembers")
           .doc(doc.id)
           .set(usermodel.toMap());
     } catch (e) {
@@ -19,14 +19,19 @@ class AddUserRepository {
   }
 
   Stream<List<Usermodel>> getUsers({required String seach}) {
-    return FirebaseFirestore.instance
-        .collection("users")
-        .where("search",
-            arrayContains: seach.isEmpty ? null : seach.toUpperCase())
-        .where("delete", isEqualTo: false).orderBy("createdDate",descending: true)
+    Query query =
+        FirebaseFirestore.instance.collection("subcriptionMembers");
+
+    if (seach.isNotEmpty) {
+      query = query.where("search", arrayContains: seach.toUpperCase());
+    }
+
+    return query
+        .where("delete", isEqualTo: false)
+        .orderBy("createdDate", descending: true)
         .snapshots()
         .map((event) => event.docs.map((e) {
-              return Usermodel.fromMap(e.data());
+              return Usermodel.fromMap(e.data() as Map<String, dynamic>);
             }).toList());
   }
 }

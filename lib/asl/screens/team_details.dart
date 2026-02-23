@@ -32,133 +32,181 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
         .getTeams(widget.seasonModel.id ?? "");
   }
 
-  playerupdate() async {
-    final playerRef =
-        await FirebaseFirestore.instance.collection('players').get();
-    final team = await FirebaseFirestore.instance.collection('teams').get();
-    final match = await FirebaseFirestore.instance.collection('matches').get();
-    for (var p in playerRef.docs) {
-      await FirebaseFirestore.instance.collection('players').doc(p.id).update({
-        "appearences": 0,
-        "statics": {"goal": 0, "assist": 0, "yelloCard": 0, "redCard": 0}
-      });
-    }
-    for (var i in team.docs) {
-      await FirebaseFirestore.instance.collection('teams').doc(i.id).update(
-          {"win": 0, "lose": 0, "point": 0, "draw": 0, "playedMatch": 0});
-    }
-    for (var e in match.docs) {
-      await FirebaseFirestore.instance
-          .collection('matches')
-          .doc(e.id)
-          .update({"teamAscore": 0, "teamBscore": 0, "status": "ongoing"});
-    }
-  }
-
   @override
   void initState() {
-    // playerupdate();
     getTeams();
-    // transferDataToSeasonSubcollection(widget.seasonModel.id ?? "");
-
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    double scrWidth = MediaQuery.of(context).size.width;
-    double scrHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      backgroundColor: Color(0xffFAFAFA),
+      backgroundColor: const Color(0xffF8FAFC), // Slate 50
       body: DefaultTabController(
         length: 5,
         child: Column(
           children: [
+            // Premium Header
             Container(
               width: double.infinity,
-              height: 180,
-              decoration: BoxDecoration(color: Palette.topColor),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Spacer(),
-                  // Logo and League name
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      // Logo
-                      SizedBox(
-                        width: scrWidth * 0.3,
-                        height: scrHeight * 0.08,
-                        child: Image.asset(ImageConstants.clubLogo),
-                      ),
-                      // League name
-                      Flexible(
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: Text(
-                            "ASL ${widget.seasonModel.seasonName.toUpperCase()}",
-                            style: GoogleFonts.inter(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF0F172A), // Slate 900
+                    Color(0xFF1E293B), // Slate 800
+                    Color(0xFF334155), // Slate 700
+                  ],
+                ),
+                // borderRadius: BorderRadius.only(
+                //   bottomLeft: Radius.circular(30),
+                //   bottomRight: Radius.circular(30),
+                // ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26, 
+                    blurRadius: 20, 
+                    offset: Offset(0, 10)
+                  )
+                ]
+              ),
+              child: SafeArea(
+                bottom: false,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    // Back Button & Title Row
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
                           ),
-                        ),
+                          Expanded(
+                            child: Text(
+                              "Tournament Dashboard",
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.outfit(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white70,
+                                letterSpacing: 1
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 40), // Balance for back button
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    
+                    const SizedBox(height: 20),
 
-                  Spacer(),
-                  TabBar(
-                    labelStyle: GoogleFonts.inter(
-                        fontSize: 15, fontWeight: FontWeight.bold),
-                    labelColor: Colors.white,
-                    indicatorColor: Colors.white,
-                    unselectedLabelColor: Colors.white70,
-                    tabs: [
-                      Tab(text: "Overview"),
-                      Tab(text: "Teams"),
+                    // Main Season Info
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Image.asset(ImageConstants.clubLogo),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "ASL ${widget.seasonModel.seasonName}",
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    height: 1.1
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Palette.newColor.withOpacity(0.8),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    "Season ${widget.seasonModel.year}",
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
-                      Tab(text: "Matches"),
-                      Tab(text: "Table"),
-                      Tab(text: "Players"),
+                    const SizedBox(height: 30),
 
-                      // Tab(text: "Knockout"),
-                    ],
-                  ),
-                ],
+                    // Tab Bar
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: TabBar(
+                        isScrollable: true,
+                        dividerColor: Colors.transparent,
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        indicator: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        labelColor: Colors.black87,
+                        unselectedLabelColor: Colors.white60,
+                        labelStyle: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w600),
+                        unselectedLabelStyle: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500),
+                        overlayColor: MaterialStateProperty.all(Colors.transparent),
+                        tabAlignment: TabAlignment.start,
+                        padding: const EdgeInsets.only(bottom: 20),
+                        tabs: const [
+                          Tab(text: "Overview"),
+                          Tab(text: "Teams"),
+                          Tab(text: "Matches"),
+                          Tab(text: "Table"),
+                          Tab(text: "Players"),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
-            // TabBarView (content for each tab)
+            // Content Area
             Expanded(
               child: TabBarView(
-                physics: NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  SeasonOverView(
-                    seasonModel: widget.seasonModel,
-                  ),
-                  //! team photos
-                  Teams(
-                    seasonModel: widget.seasonModel,
-                  ),
-                  //! matches
+                  SeasonOverView(seasonModel: widget.seasonModel),
+                  Teams(seasonModel: widget.seasonModel),
                   ShowMatch(seasonModel: widget.seasonModel),
-                  // Teams tab content
-                  //! team table
-                  SingleChildScrollView(
-                      child: TeamTable(
-                    seasonModel: widget.seasonModel,
-                  )),
-
-                  // Players tab content
-                  Players(
-                    seasonModel: widget.seasonModel,
-                  ),
-
-                  // SingleChildScrollView(child: BracketView()),
+                  SingleChildScrollView(child: TeamTable(seasonModel: widget.seasonModel)),
+                  Players(seasonModel: widget.seasonModel),
                 ],
               ),
             ),
@@ -168,301 +216,131 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
     );
   }
 
+  // Redesigned Helper Widgets (kept for potential use within sub-tabs if passed down)
   Widget topScorers(double width) {
-    return StreamBuilder<List<PlayerModel>>(
-        stream: FirebaseFirestore.instance
-            .collection("seasons")
-            .doc(widget.seasonModel.id)
-            .collection('players')
-            .orderBy("statics.goal", descending: true)
-            .limit(3)
-            .snapshots()
-            .map((event) => event.docs
-                .map(
-                  (e) => PlayerModel.fromMap(e.data()),
-                )
-                .toList()),
-        builder: (ctx, snap) {
-          if (!snap.hasData) {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-          final topScorers = snap.data ?? [];
-          if (topScorers.isEmpty ||
-              topScorers
-                  .every((element) => (element.statics['goal'] ?? 0) == 0)) {
-            return Center(
-              child: Text("No goals have been recorded yet!"),
-            );
-          }
-          return SizedBox(
-            width: double.infinity,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(padding: EdgeInsets.only(top: 20)),
-                Text(
-                  "Top Scorer",
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ListView.separated(
-                      padding: EdgeInsets.zero,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: topScorers.length,
-                      separatorBuilder: (_, __) => Divider(
-                        color: Colors.grey.shade200,
-                        height: 1,
-                      ),
-                      itemBuilder: (ctx, index) {
-                        final player = topScorers[index];
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                          child: Row(
-                            children: [
-                              // Player Image
-                              // CircleAvatar(
-                              //   radius: 28,
-                              //   backgroundImage: NetworkImage(player.image),
-                              // ),
-                              // const SizedBox(width: 12),
-
-                              // Name & Team
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      player.name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Consumer(
-                                      builder: (context, ref, _) {
-                                        ref.watch(teams);
-                                        return Text(
-                                          ref.read(teams)[player.teamId] ?? "",
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Goals
-                              index == 0
-                                  ? CircleAvatar(
-                                      radius: 18,
-                                      backgroundColor: Colors.green,
-                                      child: Text(
-                                        player.statics['goal'].toString(),
-                                        style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    )
-                                  : Text(
-                                      player.statics['goal'].toString(),
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        });
+    return _buildTopList("Top Scorers", "goal", Colors.green);
   }
 
   Widget topAssisters(double width) {
+    return _buildTopList("Top Assisters", "assist", Colors.amber[700]!);
+  }
+
+  Widget _buildTopList(String title, String statKey, Color badgeColor) {
     return StreamBuilder<List<PlayerModel>>(
-        stream: FirebaseFirestore.instance
-            .collection("seasons")
-            .doc(widget.seasonModel.id)
-            .collection('players')
-            .orderBy("statics.assist", descending: true)
-            .limit(3)
-            .snapshots()
-            .map((event) => event.docs
-                .map(
-                  (e) => PlayerModel.fromMap(e.data()),
-                )
-                .toList()),
-        builder: (ctx, snap) {
-          if (!snap.hasData) {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-          final topAssisters = snap.data ?? [];
-          if (topAssisters.isEmpty ||
-              topAssisters
-                  .every((element) => (element.statics['assist'] ?? 0) == 0)) {
-            return Center(
-              child: Text("No assists have been recorded yet!"),
-            );
-          }
+      stream: FirebaseFirestore.instance
+          .collection("seasons")
+          .doc(widget.seasonModel.id)
+          .collection('players')
+          .orderBy("statics.$statKey", descending: true)
+          .limit(3)
+          .snapshots()
+          .map((event) => event.docs.map((e) => PlayerModel.fromMap(e.data())).toList()),
+      builder: (ctx, snap) {
+        if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+        final players = snap.data ?? [];
+        if (players.isEmpty || players.every((e) => (e.statics[statKey] ?? 0) == 0)) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Padding(padding: EdgeInsets.only(top: 20)),
-                Text(
-                  "Top Assister",
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Container(
-                    width: 400,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ListView.separated(
-                      padding: EdgeInsets.zero,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: topAssisters.length,
-                      separatorBuilder: (_, __) => Divider(
-                        color: Colors.grey.shade200,
-                        height: 1,
-                      ),
-                      itemBuilder: (ctx, index) {
-                        final player = topAssisters[index];
-                        final assists = player.statics['assist'] ?? 0;
-
-                        if (assists <= 0) return const SizedBox();
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                          child: Row(
-                            children: [
-                              // Player Image
-                              // CircleAvatar(
-                              //   radius: 28,
-                              //   backgroundImage: NetworkImage(player.image),
-                              // ),
-                              // const SizedBox(width: 12),
-
-                              // Name & Team
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      player.name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Consumer(
-                                      builder: (context, ref, _) {
-                                        ref.watch(teams);
-                                        return Text(
-                                          ref.read(teams)[player.teamId] ?? "",
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Assist count
-                              index == 0
-                                  ? CircleAvatar(
-                                      radius: 18,
-                                      backgroundColor: Colors.green,
-                                      child: Text(
-                                        assists.toString(),
-                                        style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    )
-                                  : Text(
-                                      assists.toString(),
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
+            child: Text(
+              "No $statKey records yet",
+              style: GoogleFonts.outfit(color: Colors.grey),
             ),
           );
-        });
+        }
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                title,
+                style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: players.length,
+              itemBuilder: (ctx, index) {
+                final player = players[index];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
+                    ]
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40, 
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: index == 0 ? const Color(0xFFFFD700).withOpacity(0.2) : Colors.grey.shade100,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          "#${index + 1}",
+                          style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.bold,
+                            color: index == 0 ? Colors.amber[800] : Colors.grey[600]
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              player.name,
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Consumer(
+                              builder: (context, ref, _) {
+                                ref.watch(teams);
+                                return Text(
+                                  ref.read(teams)[player.teamId] ?? "Unknown Team",
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 12,
+                                    color: Colors.grey[500]
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: badgeColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          "${player.statics[statKey]}",
+                          style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.bold,
+                            color: badgeColor,
+                            fontSize: 16
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }

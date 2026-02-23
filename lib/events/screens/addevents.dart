@@ -575,7 +575,7 @@ class _AddEventsState extends ConsumerState<AddEventsScreen>
           Icon(Icons.info_outline, size: 16, color: Colors.grey.shade500),
           const SizedBox(width: 8),
           Text(
-            "Version 2.3",
+            "Version 2.7",
             style: GoogleFonts.poppins(
               fontSize: 14,
               color: Colors.grey.shade500,

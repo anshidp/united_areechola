@@ -34,6 +34,25 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
   late Animation<double> _fadeAnimation;
   late TabController _tabController;
 
+  // Responsive helper method
+  bool get isLargeScreen => MediaQuery.of(context).size.width > 1024;
+  bool get isMediumScreen => MediaQuery.of(context).size.width > 600 && MediaQuery.of(context).size.width <= 1024;
+  bool get isSmallScreen => MediaQuery.of(context).size.width <= 600;
+
+  // Responsive font sizes
+  double getResponsiveFontSize(double mobileSize, double tabletSize, double desktopSize) {
+    if (isLargeScreen) return desktopSize;
+    if (isMediumScreen) return tabletSize;
+    return mobileSize;
+  }
+
+  // Responsive padding
+  EdgeInsets getResponsivePadding() {
+    if (isLargeScreen) return const EdgeInsets.all(32);
+    if (isMediumScreen) return const EdgeInsets.all(24);
+    return const EdgeInsets.all(16);
+  }
+
   Future<void> migrateGoals(String seasonId) async {
     final firestore = FirebaseFirestore.instance;
 
@@ -74,13 +93,12 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
       final data = matchDoc.data();
       final goals = (data["goals"] ?? []) as List<dynamic>;
 
-      // Only process if it's a list of playerIds (Strings)
       if (goals.isNotEmpty && goals.first is Map) {
         final updatedGoals = goals.map((goal) {
           final playerId = goal["playerId"];
           final player = players[playerId] ?? {};
           final teamId = player["teamId"];
-          final teamName = goal["team"]; // already stored name
+          final teamName = goal["team"];
 
           return {
             "playerId": playerId,
@@ -90,9 +108,6 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
           };
         }).toList();
 
-        // print("updatedGoals: $updatedGoals");
-
-        // Update match document
         await matchDoc.reference.update({"goals": updatedGoals});
         print("Updated match ${matchDoc.id}");
       }
@@ -103,8 +118,6 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
     ref.read(teams.notifier).state = await ref
         .read(aslRepositoryProvider)
         .getTeams(widget.seasonModel.id ?? "");
-
-    // await migrateGoals(widget.seasonModel.id ?? "");
   }
 
   @override
@@ -131,9 +144,6 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
 
   @override
   Widget build(BuildContext context) {
-    var w = MediaQuery.of(context).size.width;
-    var h = MediaQuery.of(context).size.height;
-
     return StreamBuilder<List<MatchModel>>(
       stream: FirebaseFirestore.instance
           .collection('seasons')
@@ -185,27 +195,27 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                 opacity: _fadeAnimation,
                 child: Column(
                   children: [
-                    _buildHeader(w),
-                    _buildTabBar(w),
+                    // _buildHeader(),
+                    _buildTabBar(),
                     Expanded(
                       child: TabBarView(
                         controller: _tabController,
                         children: [
                           _buildMatchesTab(
-                              groupMatches, "Group Stage", h, w, Icons.groups),
-                          _buildMatchesTab(quarterMatches, "Quarter Finals", h,
-                              w, Icons.filter_4),
+                              groupMatches, "Group Stage", Icons.groups),
+                          _buildMatchesTab(quarterMatches, "Quarter Finals",
+                              Icons.filter_4),
                           _buildMatchesTab(
-                              semiMatches, "Semi Finals", h, w, Icons.filter_2),
+                              semiMatches, "Semi Finals", Icons.filter_2),
                           _buildMatchesTab(
-                              finalmatches, "Final", h, w, Icons.emoji_events),
+                              finalmatches, "Final", Icons.emoji_events),
                         ],
                       ),
                     ),
                   ],
                 ),
               ),
-              if (isFinalMatch) _buildWinnerCelebration(matches, w, h),
+              if (isFinalMatch) _buildWinnerCelebration(matches),
             ],
           ),
         );
@@ -231,9 +241,9 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
     );
   }
 
-  Widget _buildHeader(double w) {
+  Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: getResponsivePadding(),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -251,38 +261,19 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.sports_soccer,
                   color: Colors.white,
-                  size: 32,
+                  size: isLargeScreen ? 40 : (isMediumScreen ? 36 : 32),
                 ),
               ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Tournament Matches",
-                    style: GoogleFonts.inter(
-                      fontSize: kIsWeb ? w * 0.02 : 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    "ASL ${widget.seasonModel.seasonName}",
-                    style: GoogleFonts.inter(
-                      fontSize: kIsWeb ? w * 0.01 : 16,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
-              ),
+              SizedBox(width: isLargeScreen ? 24 : 16),
+              
             ],
           ),
         ],
@@ -290,7 +281,7 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
     );
   }
 
-  Widget _buildTabBar(double w) {
+  Widget _buildTabBar() {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -305,57 +296,86 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
       child: TabBar(
         controller: _tabController,
         labelStyle: GoogleFonts.inter(
-          fontSize: kIsWeb ? w * 0.01 : 14,
+          fontSize: getResponsiveFontSize(12, 14, 16),
           fontWeight: FontWeight.w600,
         ),
         unselectedLabelStyle: GoogleFonts.inter(
-          fontSize: kIsWeb ? w * 0.01 : 14,
+          fontSize: getResponsiveFontSize(12, 14, 16),
           fontWeight: FontWeight.w500,
         ),
         labelColor: const Color(0xFF3B82F6),
         unselectedLabelColor: Colors.grey[600],
         indicatorColor: const Color(0xFF3B82F6),
         indicatorWeight: 3,
-        tabs: const [
-          Tab(text: "Group Stage", icon: Icon(Icons.groups, size: 20)),
-          Tab(text: "Quarter Finals", icon: Icon(Icons.filter_4, size: 20)),
-          Tab(text: "Semi Finals", icon: Icon(Icons.filter_2, size: 20)),
-          Tab(text: "Final", icon: Icon(Icons.emoji_events, size: 20)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMatchesTab(List<MatchModel> matches, String stageName, double h,
-      double w, IconData icon) {
-    if (matches.isEmpty) {
-      return _buildEmptyState(stageName, icon);
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          _buildStageHeader(stageName, icon, matches.length, w),
-          const SizedBox(height: 20),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: matches.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              return _buildEnhancedMatchCard(matches[index], h, w, index);
-            },
+        tabs: [
+          Tab(
+            text: "Group Stage",
+            icon: Icon(Icons.groups, size: isLargeScreen ? 24 : 20),
+          ),
+          Tab(
+            text: "Quarter Finals",
+            icon: Icon(Icons.filter_4, size: isLargeScreen ? 24 : 20),
+          ),
+          Tab(
+            text: "Semi Finals",
+            icon: Icon(Icons.filter_2, size: isLargeScreen ? 24 : 20),
+          ),
+          Tab(
+            text: "Final",
+            icon: Icon(Icons.emoji_events, size: isLargeScreen ? 24 : 20),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStageHeader(
-      String stageName, IconData icon, int matchCount, double w) {
+  Widget _buildMatchesTab(
+      List<MatchModel> matches, String stageName, IconData icon) {
+    if (matches.isEmpty) {
+      return _buildEmptyState(stageName, icon);
+    }
+
+    // Use GridView for large screens, ListView for smaller screens
+    return SingleChildScrollView(
+      padding: getResponsivePadding(),
+      child: Column(
+        children: [
+          // _buildStageHeader(stageName, icon, matches.length),
+          SizedBox(height: isLargeScreen ? 32 : 20),
+          if (isLargeScreen)
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 24,
+                mainAxisSpacing: 24,
+                childAspectRatio: 1.8,
+              ),
+              itemCount: matches.length,
+              itemBuilder: (context, index) {
+                return _buildEnhancedMatchCard(matches[index], index);
+              },
+            )
+          else
+            ListView.separated(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: matches.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 16),
+              itemBuilder: (context, index) {
+                return _buildEnhancedMatchCard(matches[index], index);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStageHeader(String stageName, IconData icon, int matchCount) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isLargeScreen ? 24 : 20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF3B82F6), Color(0xFF1E40AF)],
@@ -371,8 +391,8 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white, size: 32),
-          const SizedBox(width: 16),
+          Icon(icon, color: Colors.white, size: isLargeScreen ? 40 : 32),
+          SizedBox(width: isLargeScreen ? 20 : 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,7 +400,7 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                 Text(
                   stageName,
                   style: GoogleFonts.inter(
-                    fontSize: kIsWeb ? w * 0.015 : 20,
+                    fontSize: getResponsiveFontSize(18, 22, 26),
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -388,7 +408,7 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                 Text(
                   "$matchCount ${matchCount == 1 ? 'Match' : 'Matches'}",
                   style: GoogleFonts.inter(
-                    fontSize: kIsWeb ? w * 0.01 : 14,
+                    fontSize: getResponsiveFontSize(12, 14, 16),
                     color: Colors.white70,
                   ),
                 ),
@@ -400,10 +420,9 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
     );
   }
 
-  Widget _buildEnhancedMatchCard(
-      MatchModel match, double h, double w, int index) {
+  Widget _buildEnhancedMatchCard(MatchModel match, int index) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 4),
+      margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -423,29 +442,34 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
         builder: (context, ref, _) {
           ref.watch(teams);
           return Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(isLargeScreen ? 24 : 20),
             child: Column(
               children: [
-                _buildMatchHeader(match, ref, w),
-                const SizedBox(height: 16),
-                _buildTeamsSection(match, ref, w),
-                const SizedBox(height: 16),
+                _buildMatchHeader(match, ref),
+                SizedBox(height: isLargeScreen ? 20 : 16),
+                _buildTeamsSection(match, ref),
+                SizedBox(height: isLargeScreen ? 20 : 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildGoalScorers(match.matchId ?? "", match.teamA,
-                        widget.seasonModel.id ?? "", ref, w),
-                    _buildGoalScorers(match.matchId ?? "", match.teamB,
-                        widget.seasonModel.id ?? "", ref, w),
+                    Expanded(
+                      child: _buildGoalScorers(match.matchId ?? "", match.teamA,
+                          widget.seasonModel.id ?? "", ref),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: _buildGoalScorers(match.matchId ?? "", match.teamB,
+                          widget.seasonModel.id ?? "", ref),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
-                _buildMatchInfo(match, w),
+                _buildMatchInfo(match),
                 if (isAdmin &&
                     kIsWeb &&
                     match.status == MatchStatus.ongoing.name) ...[
-                  const SizedBox(height: 16),
-                  _buildAdminActions(match, ref, w, h),
+                  SizedBox(height: isLargeScreen ? 20 : 16),
+                  _buildAdminActions(match, ref),
                 ],
               ],
             ),
@@ -456,7 +480,7 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
   }
 
   Widget _buildGoalScorers(
-      String matchId, String teamId, String seasonId, WidgetRef ref, double w) {
+      String matchId, String teamId, String seasonId, WidgetRef ref) {
     return FutureBuilder(
       future: ref.read(aslRepositoryProvider).getgoalByteam(
             matchId: matchId,
@@ -465,21 +489,17 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
           ),
       builder: (context, asyncSnapshot) {
         if (asyncSnapshot.connectionState == ConnectionState.waiting) {
-          return SizedBox(
-            height: 20,
-            width: 20,
-            child: CircularProgressIndicator(
+          return Center(child:CircularProgressIndicator(
               strokeWidth: 2,
               valueColor: AlwaysStoppedAnimation<Color>(Colors.grey[400]!),
-            ),
-          );
+            ));
         }
 
         if (asyncSnapshot.hasError) {
           return Text(
             "Error loading goals",
             style: GoogleFonts.inter(
-              fontSize: kIsWeb ? w * 0.008 : 10,
+              fontSize: getResponsiveFontSize(9, 10, 12),
               color: Colors.red[400],
             ),
             textAlign: TextAlign.center,
@@ -493,7 +513,7 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
             return Text(
               "No goals yet",
               style: GoogleFonts.inter(
-                fontSize: kIsWeb ? w * 0.009 : 11,
+                fontSize: getResponsiveFontSize(10, 11, 13),
                 color: Colors.grey[500],
                 fontStyle: FontStyle.italic,
               ),
@@ -504,47 +524,62 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
           return Column(
             children: goalsData.map<Widget>((goal) {
               final playerName = goal.goalTakerName ?? "";
+              final type = goal.type ?? "goals"; // Default to goals if null
+              
+              Color bgColor;
+              Color borderColor;
+              Color textColor;
+              Widget icon;
+
+              if (type == "yellow") {
+                bgColor = Colors.yellow[50]!;
+                borderColor = Colors.yellow[200]!;
+                textColor = Colors.yellow[900]!;
+                icon = Icon(Icons.rectangle, color: Colors.yellow[700], size: 16);
+              } else if (type == "red") {
+                bgColor = Colors.red[50]!;
+                borderColor = Colors.red[200]!;
+                textColor = Colors.red[900]!;
+                icon = const Icon(Icons.rectangle, color: Colors.red, size: 16);
+              } else {
+                // Goals, Penaltis
+                bgColor = Colors.orange[50]!;
+                borderColor = Colors.orange[200]!;
+                textColor = Colors.orange[800]!;
+                icon = Text(
+                  "⚽",
+                  style: TextStyle(fontSize: getResponsiveFontSize(11, 12, 14)),
+                );
+              }
+
               return Container(
                 margin: const EdgeInsets.only(bottom: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLargeScreen ? 12 : 8,
+                  vertical: isLargeScreen ? 6 : 4,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.orange[50],
+                  color: bgColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange[200]!),
+                  border: Border.all(color: borderColor),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      "⚽",
-                      style: TextStyle(fontSize: kIsWeb ? w * 0.01 : 12),
-                    ),
+                    icon,
                     const SizedBox(width: 4),
-                    goal.isPenaltyGoal == true
-                        ? Flexible(
-                            child: Text(
-                              "$playerName (Pen)",
-                              style: GoogleFonts.inter(
-                                fontSize: kIsWeb ? w * 0.009 : 11,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.orange[800],
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          )
-                        : Flexible(
-                            child: Text(
-                              playerName,
-                              style: GoogleFonts.inter(
-                                fontSize: kIsWeb ? w * 0.009 : 11,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.orange[800],
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
+                    Flexible(
+                      child: Text(
+                        goal.isPenaltyGoal == true ? "$playerName (Pen)" : playerName,
+                        style: GoogleFonts.inter(
+                          fontSize: getResponsiveFontSize(10, 11, 13),
+                          fontWeight: FontWeight.w500,
+                          color: textColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -557,11 +592,14 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
     );
   }
 
-  Widget _buildMatchHeader(MatchModel match, WidgetRef ref, double w) {
+  Widget _buildMatchHeader(MatchModel match, WidgetRef ref) {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: EdgeInsets.symmetric(
+            horizontal: isLargeScreen ? 16 : 12,
+            vertical: isLargeScreen ? 8 : 6,
+          ),
           decoration: BoxDecoration(
             color: _getMatchStatusColor(match.status),
             borderRadius: BorderRadius.circular(20),
@@ -569,7 +607,7 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
           child: Text(
             match.status.toUpperCase(),
             style: GoogleFonts.inter(
-              fontSize: kIsWeb ? w * 0.008 : 12,
+              fontSize: getResponsiveFontSize(11, 12, 14),
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -579,13 +617,13 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
     );
   }
 
-  Widget _buildTeamsSection(MatchModel match, WidgetRef ref, double w) {
+  Widget _buildTeamsSection(MatchModel match, WidgetRef ref) {
     return Row(
       children: [
         // Team A
         Expanded(
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isLargeScreen ? 20 : 16),
             decoration: BoxDecoration(
               color: Colors.grey[50],
               borderRadius: BorderRadius.circular(12),
@@ -595,7 +633,7 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                 Text(
                   ref.read(teams)[match.teamA] ?? "Team A",
                   style: GoogleFonts.inter(
-                    fontSize: kIsWeb ? w * 0.012 : 16,
+                    fontSize: getResponsiveFontSize(14, 16, 18),
                     fontWeight: FontWeight.bold,
                     color: Colors.grey[800],
                   ),
@@ -606,11 +644,11 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                 if (match.status == MatchStatus.fulltime.name ||
                     match.teamAscore > 0 ||
                     match.teamBscore > 0) ...[
-                  const SizedBox(height: 8),
+                  SizedBox(height: isLargeScreen ? 12 : 8),
                   Text(
                     match.teamAscore.toString(),
                     style: GoogleFonts.inter(
-                      fontSize: kIsWeb ? w * 0.02 : 24,
+                      fontSize: getResponsiveFontSize(22, 26, 32),
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF3B82F6),
                     ),
@@ -623,7 +661,7 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
 
         // VS or Score Section
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: isLargeScreen ? 20 : 16),
           child: Column(
             children: [
               if (match.status == MatchStatus.fulltime.name ||
@@ -632,7 +670,7 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                 Text(
                   "VS",
                   style: GoogleFonts.inter(
-                    fontSize: kIsWeb ? w * 0.01 : 14,
+                    fontSize: getResponsiveFontSize(12, 14, 16),
                     fontWeight: FontWeight.bold,
                     color: Colors.grey[600],
                   ),
@@ -643,13 +681,13 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                     Icon(
                       Icons.access_time,
                       color: Colors.grey[600],
-                      size: 20,
+                      size: isLargeScreen ? 24 : 20,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       DateFormat('HH:mm').format(match.kickoff),
                       style: GoogleFonts.inter(
-                        fontSize: kIsWeb ? w * 0.01 : 14,
+                        fontSize: getResponsiveFontSize(12, 14, 16),
                         fontWeight: FontWeight.bold,
                         color: Colors.grey[800],
                       ),
@@ -657,7 +695,7 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                     Text(
                       DateFormat('MMM dd').format(match.kickoff),
                       style: GoogleFonts.inter(
-                        fontSize: kIsWeb ? w * 0.008 : 12,
+                        fontSize: getResponsiveFontSize(11, 12, 14),
                         color: Colors.grey[600],
                       ),
                     ),
@@ -671,7 +709,7 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
         // Team B
         Expanded(
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isLargeScreen ? 20 : 16),
             decoration: BoxDecoration(
               color: Colors.grey[50],
               borderRadius: BorderRadius.circular(12),
@@ -681,7 +719,7 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                 Text(
                   ref.read(teams)[match.teamB] ?? "Team B",
                   style: GoogleFonts.inter(
-                    fontSize: kIsWeb ? w * 0.012 : 16,
+                    fontSize: getResponsiveFontSize(14, 16, 18),
                     fontWeight: FontWeight.bold,
                     color: Colors.grey[800],
                   ),
@@ -692,11 +730,11 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                 if (match.status == MatchStatus.fulltime.name ||
                     match.teamAscore > 0 ||
                     match.teamBscore > 0) ...[
-                  const SizedBox(height: 8),
+                  SizedBox(height: isLargeScreen ? 12 : 8),
                   Text(
                     match.teamBscore.toString(),
                     style: GoogleFonts.inter(
-                      fontSize: kIsWeb ? w * 0.02 : 24,
+                      fontSize: getResponsiveFontSize(22, 26, 32),
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF3B82F6),
                     ),
@@ -710,9 +748,9 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
     );
   }
 
-  Widget _buildMatchInfo(MatchModel match, double w) {
+  Widget _buildMatchInfo(MatchModel match) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(isLargeScreen ? 16 : 12),
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
@@ -721,25 +759,25 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildInfoItem(Icons.calendar_today,
-              DateFormat('MMM dd, yyyy').format(match.kickoff), w),
+              DateFormat('MMM dd, yyyy').format(match.kickoff)),
           _buildInfoItem(
-              Icons.access_time, DateFormat('HH:mm').format(match.kickoff), w),
-          _buildInfoItem(Icons.sports_soccer, match.stage.toUpperCase(), w),
+              Icons.access_time, DateFormat('HH:mm').format(match.kickoff)),
+          _buildInfoItem(Icons.sports_soccer, match.stage.toUpperCase()),
         ],
       ),
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String text, double w) {
+  Widget _buildInfoItem(IconData icon, String text) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
-        const SizedBox(width: 4),
+        Icon(icon, size: isLargeScreen ? 18 : 16, color: Colors.grey[600]),
+        SizedBox(width: isLargeScreen ? 6 : 4),
         Text(
           text,
           style: GoogleFonts.inter(
-            fontSize: kIsWeb ? w * 0.008 : 12,
+            fontSize: getResponsiveFontSize(11, 12, 14),
             color: Colors.grey[700],
           ),
         ),
@@ -747,35 +785,44 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
     );
   }
 
-  Widget _buildAdminActions(
-      MatchModel match, WidgetRef ref, double w, double h) {
+  Widget _buildAdminActions(MatchModel match, WidgetRef ref) {
     return Row(
       children: [
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () => _showEndMatchDialog(match, ref, w, h),
-            icon: const Icon(Icons.sports_score, size: 18),
-            label: const Text("End Match"),
+            onPressed: () => _showEndMatchDialog(match, ref),
+            icon: Icon(Icons.sports_score, size: isLargeScreen ? 20 : 18),
+            label: Text(
+              "End Match",
+              style: TextStyle(fontSize: getResponsiveFontSize(12, 14, 16)),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: EdgeInsets.symmetric(
+                vertical: isLargeScreen ? 16 : 12,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: isLargeScreen ? 16 : 12),
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () => showUpdateMatchDialog(context, match),
-            icon: const Icon(Icons.edit, size: 18),
-            label: const Text("Update"),
+            icon: Icon(Icons.edit, size: isLargeScreen ? 20 : 18),
+            label: Text(
+              "Update",
+              style: TextStyle(fontSize: getResponsiveFontSize(12, 14, 16)),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3B82F6),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: EdgeInsets.symmetric(
+                vertical: isLargeScreen ? 16 : 12,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -791,12 +838,12 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
+          Icon(icon, size: isLargeScreen ? 80 : 64, color: Colors.grey[400]),
+          SizedBox(height: isLargeScreen ? 24 : 16),
           Text(
             "No matches in $stageName",
             style: GoogleFonts.inter(
-              fontSize: 18,
+              fontSize: getResponsiveFontSize(16, 18, 20),
               fontWeight: FontWeight.w600,
               color: Colors.grey[600],
             ),
@@ -806,20 +853,26 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
     );
   }
 
-  Widget _buildWinnerCelebration(List<MatchModel> matches, double w, double h) {
+  Widget _buildWinnerCelebration(List<MatchModel> matches) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Lottie.asset(
           'assets/winners.json',
           repeat: true,
-          width: w * 0.3,
-          height: h * 0.3,
+          width: isLargeScreen ? 400 : (screenWidth * 0.3),
+          height: isLargeScreen ? 400 : (screenHeight * 0.3),
         ),
         const SizedBox(height: 20),
         Container(
-          width: w * 0.7,
-          height: h * 0.04,
+          width: isLargeScreen ? 600 : (screenWidth * 0.7),
+          padding: EdgeInsets.symmetric(
+            vertical: isLargeScreen ? 20 : 12,
+            horizontal: isLargeScreen ? 32 : 16,
+          ),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
@@ -833,7 +886,7 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                 child: Text(
                   "🏆 Champions: ${ref.read(teams)[getFinalWinner(matches)]} 🏆",
                   style: GoogleFonts.inter(
-                    fontSize: kIsWeb ? w * 0.02 : 15,
+                    fontSize: getResponsiveFontSize(14, 18, 22),
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -860,8 +913,10 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
     }
   }
 
-  void _showEndMatchDialog(
-      MatchModel match, WidgetRef ref, double w, double h) {
+  void _showEndMatchDialog(MatchModel match, WidgetRef ref) {
+    final w = MediaQuery.of(context).size.width;
+    final h = MediaQuery.of(context).size.height;
+    
     teamAscoreController.text = (match.teamAscore ?? 0).toString();
     teamBscoreController.text = (match.teamBscore ?? 0).toString();
 
@@ -873,10 +928,13 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
             "End Match",
-            style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.bold,
+              fontSize: getResponsiveFontSize(18, 20, 24),
+            ),
           ),
           content: SizedBox(
-            width: w * 0.4,
+            width: isLargeScreen ? 500 : (w * 0.8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -889,15 +947,21 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly
                         ],
+                        style: TextStyle(
+                          fontSize: getResponsiveFontSize(14, 16, 18),
+                        ),
                         decoration: InputDecoration(
                           labelText: ref.read(teams)[match.teamA] ?? "Team A",
+                          labelStyle: TextStyle(
+                            fontSize: getResponsiveFontSize(12, 14, 16),
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: isLargeScreen ? 24 : 16),
                     Expanded(
                       child: TextFormField(
                         controller: teamBscoreController,
@@ -905,8 +969,14 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly
                         ],
+                        style: TextStyle(
+                          fontSize: getResponsiveFontSize(14, 16, 18),
+                        ),
                         decoration: InputDecoration(
                           labelText: ref.read(teams)[match.teamB] ?? "Team B",
+                          labelStyle: TextStyle(
+                            fontSize: getResponsiveFontSize(12, 14, 16),
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -915,74 +985,77 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
                     ),
                   ],
                 ),
-                Padding(padding: EdgeInsets.only(top: h * 0.03)),
+                SizedBox(height: isLargeScreen ? 24 : 16),
                 if (int.parse(teamAscoreController.text) == 0 &&
                         int.parse(teamBscoreController.text) == 0 &&
                         match.stage == GroupType.semifinal.name ||
                     match.stage == GroupType.finalmatch.name)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.only(left: w * 0.02),
-                        width: w * 0.2,
-                        height: h * 0.06,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(w * 0.02),
-                          border: Border.all(color: Colors.grey),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isLargeScreen ? 16 : 12,
+                      vertical: isLargeScreen ? 4 : 2,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey),
+                    ),
+                    child: DropdownButton<String>(
+                      focusColor: Colors.transparent,
+                      underline: const SizedBox(),
+                      isExpanded: true,
+                      hint: Text(
+                        "Select Winner",
+                        style: GoogleFonts.poppins(
+                          color: Color(0xffB6B6B6),
+                          fontSize: getResponsiveFontSize(12, 14, 16),
                         ),
-                        child: DropdownButton<String>(
-                            focusColor: Colors.transparent,
-                            underline: const SizedBox(),
-                            hint: Text(
-                              "Select Winner",
-                              style: GoogleFonts.poppins(
-                                color: Color(0xffB6B6B6),
-                                fontSize: w * 0.008,
+                      ),
+                      value: (ref.watch(selectWinningTeam) ?? "").isEmpty
+                          ? null
+                          : ref.read(selectWinningTeam),
+                      items: ref
+                          .watch(teams)
+                          .entries
+                          .map(
+                            (possition) => DropdownMenuItem<String>(
+                              value: possition.key,
+                              child: Text(
+                                possition.value,
+                                style: GoogleFonts.poppins(
+                                  color: Colors.black,
+                                  fontSize: getResponsiveFontSize(12, 14, 16),
+                                ),
                               ),
                             ),
-                            value: (ref.watch(selectWinningTeam) ?? "").isEmpty
-                                ? null
-                                : ref.read(selectWinningTeam),
-                            items: ref
-                                .watch(teams)
-                                .entries
-                                .map(
-                                  (possition) => DropdownMenuItem<String>(
-                                    value: possition.key,
-                                    child: Text(
-                                      possition.value,
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.black,
-                                        fontSize: w * 0.008,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (value) {
-                              set(
-                                () {
-                                  ref.read(selectWinningTeam.notifier).state =
-                                      value;
-                                },
-                              );
-                            }),
-                      ),
-                    ],
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        set(
+                          () {
+                            ref.read(selectWinningTeam.notifier).state = value;
+                          },
+                        );
+                      },
+                    ),
                   ),
-                Padding(padding: EdgeInsets.only(top: h * 0.03)),
               ],
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: Text(
+                "Cancel",
+                style: TextStyle(fontSize: getResponsiveFontSize(12, 14, 16)),
+              ),
             ),
             ElevatedButton(
               onPressed: () => _endMatch(match, ref, w, h),
-              child: const Text("End Match"),
+              child: Text(
+                "End Match",
+                style: TextStyle(fontSize: getResponsiveFontSize(12, 14, 16)),
+              ),
             ),
           ],
         );
@@ -1003,8 +1076,6 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
   }
 
   void _endMatch(MatchModel match, WidgetRef ref, double w, double h) async {
-    // Implementation for ending match
-
     bool isPenalty = int.parse(teamAscoreController.text) == 0 &&
             int.parse(teamBscoreController.text) == 0 &&
             match.stage == GroupType.semifinal.name ||
@@ -1025,7 +1096,6 @@ class _ShowMatchState extends ConsumerState<ShowMatch>
     final confirm =
         await alert(context, "Do you want to end this match?", w, h);
 
-    //! update match
     if (confirm && context.mounted) {
       ref.read(aslRepositoryProvider).updateMatchStat(
           seasonId: widget.seasonModel.id ?? "",

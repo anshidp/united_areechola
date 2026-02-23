@@ -36,7 +36,7 @@ class _HomeState extends ConsumerState<Home>
 
   final List<NavigationItem> _mobileNavItems = [
     NavigationItem(
-      icon: Icon(Icons.dashboard_rounded),
+      icon: Icon(Icons.grid_view_rounded), // Updated for Dashboard
       label: 'Dashboard',
       color: Color(0xFF3B82F6),
     ),
@@ -50,25 +50,24 @@ class _HomeState extends ConsumerState<Home>
       color: Color(0xFF06B6D4),
     ),
     NavigationItem(
-      icon: Icon(Icons.subscriptions_rounded),
+      icon: Icon(Icons.card_membership_rounded), // Updated for Subscriptions
       label: 'Subscriptions',
       color: Color(0xFF8B5CF6),
     ),
-    
     NavigationItem(
       icon: Icon(
-        Icons.bloodtype_rounded,
+        Icons.bloodtype_rounded, // Kept relevant
       ),
       label: 'Blood Groups',
       color: Color(0xFFDC2626),
     ),
     NavigationItem(
-      icon: Icon(Icons.celebration),
+      icon: Icon(Icons.savings_rounded), // Updated for Kuri (Savings)
       label: 'Kuri',
       color: Color(0xFFF59E0B),
     ),
     NavigationItem(
-      icon: Icon(Icons.event_rounded),
+      icon: Icon(Icons.calendar_month_rounded), // Updated for Events
       label: 'Events',
       color: Color(0xFFF59E0B),
     ),
@@ -84,18 +83,32 @@ class _HomeState extends ConsumerState<Home>
 
   void updateUserToken(UserDataModel user) async {
     try {
-      String token = await FirebaseMessaging.instance.getToken() ?? "";
+      String? token;
 
+      // ✅ Fix: Check platform and provide VAPID key for Web
+      if (kIsWeb) {
+        token = await FirebaseMessaging.instance.getToken(
+          vapidKey: "BJ8Wclfm-WkXbyrKUJrmW-sX5f56Fu6YQyoQD9vvEuyHBz-GFqPE5TW6li67Gp4fkP69CTNBHNJOMT4lgvgkKRg", // <--- Paste your key here
+        );
+      } else {
+        token = await FirebaseMessaging.instance.getToken();
+      }
+
+      // Guard against null token
+      if (token == null) return;
+
+      // Update if token is new or empty
       if ((user.token ?? "").isEmpty || user.token != token) {
         await FirebaseFirestore.instance
-            .collection(FirebaseContants.members)
+            .collection(FirebaseContants
+                .members) // Ensure this matches "Members" in your Cloud Function
             .doc(user.id)
             .update({"token": token});
 
-        print("isAdmin: $isAdmin");
+        print("Token updated for user: ${user.id}");
       }
     } on FirebaseException catch (e) {
-      debugPrint(e.toString());
+      debugPrint("Error updating token: ${e.toString()}");
     }
   }
 

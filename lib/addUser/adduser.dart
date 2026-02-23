@@ -605,12 +605,15 @@ class _AddUsersState extends ConsumerState<AddUsers>
                   ),
                 );
               },
-              error: (error, stackTrace) => Center(
-                child: Text(
-                  'Error loading users',
-                  style: GoogleFonts.poppins(color: Colors.red),
-                ),
-              ),
+              error: (error, stackTrace) {
+                print(error);
+                return Center(
+                  child: Text(
+                    'Error loading users: $error',
+                    style: GoogleFonts.poppins(color: Colors.red),
+                  ),
+                );
+              },
               loading: () => const Center(child: CircularProgressIndicator()),
             );
       },
@@ -835,7 +838,7 @@ class _AddUsersState extends ConsumerState<AddUsers>
   void deleteAdmin(Usermodel user) {
     try {
       FirebaseFirestore.instance
-          .collection("users")
+          .collection("subcriptionMembers")
           .doc(user.id)
           .update({'delete': true});
     } catch (e) {

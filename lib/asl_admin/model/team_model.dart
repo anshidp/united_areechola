@@ -18,6 +18,8 @@ class AslTeamModel {
   int draw;
   String group;
   String seasonId;
+  int? goalsFor;
+  int? goalsAgainst;
 
   AslTeamModel(
       {required this.name,
@@ -32,6 +34,8 @@ class AslTeamModel {
       required this.lose,
       required this.point,
       required this.draw,
+      required this.goalsFor,
+      required this.goalsAgainst,
       this.delete,
       this.search,
       this.teamId});
@@ -52,28 +56,31 @@ class AslTeamModel {
       'lose': lose,
       'point': point,
       'group': group,
-      'seasonId': seasonId
+      'seasonId': seasonId,
+      'goalsFor': goalsFor,
+      'goalsAgainst': goalsAgainst
     };
   }
 
   factory AslTeamModel.fromMap(Map<String, dynamic> map) {
     return AslTeamModel(
-      seasonId: map['seasonId'],
-      group: map['group'] ?? "",
-      draw: map['draw'] ?? 0,
-      playedMatch: map['playedMatch'],
-      win: map['win'],
-      lose: map['lose'],
-      point: map['point'],
-      players: map['players'] ?? [],
-      name: map['name'] ?? "",
-      image: map['image'] ?? "",
-      manager: map['manager'] ?? "",
-      teamId: map['teamId'] ?? "",
-      reference: map['reference'],
-      delete: map['delete'] ?? false,
-      search: map['search'] ?? [],
-    );
+        seasonId: map['seasonId'],
+        group: map['group'] ?? "",
+        draw: map['draw'] ?? 0,
+        playedMatch: map['playedMatch'],
+        win: map['win'],
+        lose: map['lose'],
+        point: map['point'],
+        players: map['players'] ?? [],
+        name: map['name'] ?? "",
+        image: map['image'] ?? "",
+        manager: map['manager'] ?? "",
+        teamId: map['teamId'] ?? "",
+        reference: map['reference'],
+        delete: map['delete'] ?? false,
+        search: map['search'] ?? [],
+        goalsAgainst: map['goalsAgainst'] ?? 0,
+        goalsFor: map['goalsFor'] ?? 0);
   }
 
   AslTeamModel copyWith({
@@ -92,23 +99,26 @@ class AslTeamModel {
     int? draw,
     String? group,
     String? seasonId,
+    int? goalsFor,
+    int? goalsAgainst,
   }) {
     return AslTeamModel(
-      name: name ?? this.name,
-      image: image ?? this.image,
-      manager: manager ?? this.manager,
-      teamId: teamId ?? this.teamId,
-      players: players ?? this.players,
-      reference: reference ?? this.reference,
-      delete: delete ?? this.delete,
-      search: search ?? this.search,
-      playedMatch: playedMatch ?? this.playedMatch,
-      win: win ?? this.win,
-      lose: lose ?? this.lose,
-      point: point ?? this.point,
-      draw: draw ?? this.draw,
-      group: group ?? this.group,
-      seasonId: seasonId ?? this.seasonId,
-    );
+        name: name ?? this.name,
+        image: image ?? this.image,
+        manager: manager ?? this.manager,
+        teamId: teamId ?? this.teamId,
+        players: players ?? this.players,
+        reference: reference ?? this.reference,
+        delete: delete ?? this.delete,
+        search: search ?? this.search,
+        playedMatch: playedMatch ?? this.playedMatch,
+        win: win ?? this.win,
+        lose: lose ?? this.lose,
+        point: point ?? this.point,
+        draw: draw ?? this.draw,
+        group: group ?? this.group,
+        seasonId: seasonId ?? this.seasonId,
+        goalsAgainst: goalsAgainst ?? this.goalsAgainst,
+        goalsFor: goalsFor ?? this.goalsFor);
   }
 }

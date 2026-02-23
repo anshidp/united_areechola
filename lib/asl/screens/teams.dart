@@ -135,7 +135,7 @@ class _TeamsState extends ConsumerState<Teams> with TickerProviderStateMixin {
                           ),
                           SizedBox(height: 16),
                           Text(
-                            "ASL SEASON - 9",
+                            "ASL ${widget.seasonModel.seasonName}",
                             style: GoogleFonts.poppins(
                               fontSize:
                                   kIsWeb ? scrWidth * 0.024 : scrWidth * 0.07,

@@ -133,7 +133,7 @@ class _AslState extends State<Asl> with TickerProviderStateMixin {
                     ),
                   ),
                   Text(
-                    'Areechola Sports League',
+                    'Areechola Super League',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,

@@ -180,6 +180,45 @@ class AslAdminRepository implements AslAdminRepo {
     }
   }
 
+  Future<List<AslTeamModel>> getTeamsList(String seasonId) async {
+    try {
+      final teamSnap = await FirebaseFirestore.instance
+          .collection("seasons")
+          .doc(seasonId)
+          .collection("teams")
+          .where('delete', isEqualTo: false)
+          .get();
+      if (teamSnap.docs.isNotEmpty) {
+        return teamSnap.docs
+            .map((team) => AslTeamModel.fromMap(team.data()))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint(e.toString());
+      return [];
+    }
+  }
+
+  Future<List<PlayerModel>> getPlayersList(String teamId) async {
+    try {
+      final playerSnap = await FirebaseFirestore.instance
+          .collectionGroup("players")
+          .where('teamId', isEqualTo: teamId)
+          .where('delete', isEqualTo: false)
+          .get();
+      if (playerSnap.docs.isNotEmpty) {
+        return playerSnap.docs
+            .map((player) => PlayerModel.fromMap(player.data()))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint(e.toString());
+      return [];
+    }
+  }
+
   Future<Map<String, dynamic>> getSeasons() async {
     try {
       Map<String, dynamic> seasons = {};
@@ -340,7 +379,8 @@ class AslAdminRepository implements AslAdminRepo {
           goalTaker: playerId,
           goalTakerName: playerName,
           createdDate: DateTime.now(),
-          team: selectTeam);
+          team: selectTeam,
+          type: type);
 
       goalRef.set(goalModel.toMap());
 
@@ -469,14 +509,18 @@ class AslAdminRepository implements AslAdminRepo {
           'lose': teamAlose,
           'point': teamAPoint,
           'draw': teamAdraw,
-          'playedMatch': FieldValue.increment(1)
+          'playedMatch': FieldValue.increment(1),
+          'goalsFor': FieldValue.increment(teamAscore), // Add goals scored
+          'goalsAgainst': FieldValue.increment(teamBscore),
         });
         await teamBref.update({
           'win': teamBwin,
           'lose': teamBlose,
           'point': teamBPoint,
           'draw': teamBdraw,
-          'playedMatch': FieldValue.increment(1)
+          'playedMatch': FieldValue.increment(1),
+          'goalsFor': FieldValue.increment(teamBscore), // Add goals scored
+          'goalsAgainst': FieldValue.increment(teamAscore),
         });
       }
       print("0000000");

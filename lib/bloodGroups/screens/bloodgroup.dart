@@ -119,10 +119,6 @@ class _BloodGroupsState extends State<BloodGroups>
           ),
         ),
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_rounded, color: primarycolor),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
       body: Column(
         children: [
@@ -185,7 +181,7 @@ class _BloodGroupsState extends State<BloodGroups>
                 //         ],
                 //       ),
                 //     ),
-                 
+
                 //   ],
                 // ),
                 // const SizedBox(height: 20),

@@ -32,6 +32,26 @@ class SubcriptionRepository implements SubcriptionRepositoryClass {
     }
   }
 
+  Future<void> addBulkSubscription(
+      {required List<SubcriptionModel> subscriptions}) async {
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+      final collection = FirebaseFirestore.instance
+          .collection(FirebaseContants.transactions);
+
+      for (var sub in subscriptions) {
+        final doc = collection.doc();
+        sub.id = doc.id;
+        batch.set(doc, sub.toMap());
+      }
+
+      await batch.commit();
+    } catch (e) {
+      debugPrint(e.toString());
+      throw e;
+    }
+  }
+
   Stream<List<SubcriptionModel>> getSubcriptionTransactions(
       {required String selectedMonth}) {
     try {

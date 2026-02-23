@@ -8,6 +8,8 @@ import 'package:united_areechola/Homepage/chart/dashboard_chart.dart';
 import 'package:united_areechola/authentication/screens/login.dart';
 import 'package:united_areechola/authentication/screens/splash_screen.dart';
 import 'package:united_areechola/events/screens/addevents.dart';
+import 'package:united_areechola/kuri/screens/accounts_screen.dart';
+
 
 class Dashboard extends ConsumerStatefulWidget {
   const Dashboard({super.key});
@@ -23,7 +25,7 @@ class _DashboardState extends ConsumerState<Dashboard>
   late Animation<double> _fadeAnimation;
 
   int totalUsers = 0;
-  int totalevents = 0;
+  double totalExpense = 0;
   double totalsubcriptionIncome = 0;
   double totalEventIncome = 0;
   bool isLoading = true;
@@ -96,13 +98,16 @@ class _DashboardState extends ConsumerState<Dashboard>
           });
         }),
         FirebaseFirestore.instance
-            .collection("events")
-            .where("delete", isEqualTo: false)
-            .count()
+            .collection("accounts") // Changed from events to accounts
+            .where("type", isEqualTo: "expense") // Filter for expenses
+            //.where("delete", isEqualTo: false) // Assuming accounts collection might have delete flag later
             .get()
             .then((value) {
           setState(() {
-            totalevents = value.count ?? 0;
+            totalExpense = 0;
+            for (var i in value.docs) {
+              totalExpense += (i["amount"] ?? 0).toDouble();
+            }
           });
         }),
         FirebaseFirestore.instance
@@ -394,16 +399,16 @@ class _DashboardState extends ConsumerState<Dashboard>
         'gradient': [Colors.green[400]!, Colors.green[600]!],
       },
       {
-        'title': 'Total Events',
-        'value': totalevents,
-        'icon': Icons.event_outlined,
-        'color': Colors.blue,
-        'gradient': [Colors.blue[400]!, Colors.blue[600]!],
+        'title': 'Total Expense', // Changed from Total Events
+        'value': totalExpense, // Updated to use tracked expenses
+        'icon': Icons.arrow_upward_rounded, // Changed icon
+        'color': Colors.red, // Changed color
+        'gradient': [Colors.red[400]!, Colors.red[600]!],
       },
       {
-        'title': 'Total Income',
+        'title': 'Subscription Income', // Changed from Total Income
         'value': totalsubcriptionIncome,
-        'icon': Icons.account_balance_wallet_outlined,
+        'icon': Icons.card_membership_rounded,
         'color': Colors.purple,
         'gradient': [Colors.purple[400]!, Colors.purple[600]!],
       },
@@ -471,7 +476,7 @@ class _DashboardState extends ConsumerState<Dashboard>
           onTap: () {
             if (index == 1) {
               Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => AddEventsScreen()));
+                  MaterialPageRoute(builder: (context) => AccountsScreen()));
             }
           },
           child: Padding(

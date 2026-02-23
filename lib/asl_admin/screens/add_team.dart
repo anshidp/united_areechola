@@ -932,6 +932,8 @@ class _AddPlayersState extends ConsumerState<AddTeams>
           delete: false,
           search: setSearchParam(teamNameController.text.trim()),
           players: [],
+          goalsAgainst: 0,
+          goalsFor: 0
         );
         final teamId = await ref
             .read(aslRepositoryProvider)

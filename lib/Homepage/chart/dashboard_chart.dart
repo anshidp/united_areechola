@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class DashboardChart extends StatefulWidget {
   final double totalEventIncome;
@@ -114,6 +115,7 @@ class _DashboardChartState extends State<DashboardChart> {
   List<BarChartGroupData> rawBarGroups = [];
   List<BarChartGroupData> showingBarGroups = [];
   String selectedRange = 'Monthly';
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -271,141 +273,230 @@ class _DashboardChartState extends State<DashboardChart> {
     }
   }
 
-  BarChartGroupData makeGroupData(
-    int x,
-    double y,
-  ) {
-    return BarChartGroupData(
-      barsSpace: 5,
-      x: x,
-      barRods: [
-        BarChartRodData(
-          backDrawRodData: BackgroundBarChartRodData(show: true),
-          borderRadius: BorderRadius.zero,
-          gradient: const LinearGradient(colors: [
-            Colors.blue,
-            Colors.yellow,
-          ]),
-          width: 25,
-          toY: y,
-        ),
-      ],
-    );
-  }
-
-  bool isLoading = true;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(8),
-        child: SingleChildScrollView(
-          child: Column(
-            children: <Widget>[
-              Align(
-                alignment: Alignment.topRight,
-                child: SizedBox(
-                  width: 100,
-                  height: 60,
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      autofocus: true,
-                      borderRadius: BorderRadius.circular(8),
-                      focusColor: Colors.transparent,
-                      value: selectedRange,
-                      items: ['Monthly', 'Yearly']
-                          .map((range) => DropdownMenuItem(
-                                value: range,
-                                child: Text(
-                                  range,
-                                  style: const TextStyle(
-                                    fontFamily: "PublicSans",
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        print("work");
-                        setState(() {
-                          selectedRange = value!;
-                          fetchDataFromFirestore();
-                        });
-                      },
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04), // Ultra subtle shadow
+            blurRadius: 30,
+            offset: const Offset(0, 10),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "REVENUE",
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.2,
+                      color: Colors.grey[400],
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(
-                height: 38,
-              ),
-              if (isLoading)
-                Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.blue.shade900,
-                  ),
-                )
-              else
-                SizedBox(
-                  width: double.maxFinite,
-                  height: 350,
-                  child: BarChart(
-                    BarChartData(
-                      barTouchData: BarTouchData(
-                          enabled: true,
-                          touchTooltipData:
-                              BarTouchTooltipData(getTooltipColor: (bar) {
-                            return Colors.white;
-                          })),
-                      groupsSpace: 3,
-                      backgroundColor: Colors.white,
-                      maxY: widget.totalEventIncome <= 0
-                          ? null
-                          : widget.totalEventIncome + 800,
-                      titlesData: FlTitlesData(
-                        show: true,
-                        leftTitles: const AxisTitles(
-                            axisNameSize: 18,
-                            sideTitles: SideTitles(showTitles: false)),
-                        rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (val, _) {
-                                  List<Widget> tiles = [];
-                                  if (selectedRange == "Weekly") {
-                                    tiles.add(weekTitles(val, weeks));
-                                  } else if (selectedRange == "Monthly") {
-                                    tiles.add(monthbottomTile(val));
-                                  } else {
-                                    tiles.add(yearTile(val, years));
-                                  }
-                                  return Row(
-                                    children: tiles,
-                                  );
-                                })),
-                      ),
-                      borderData: FlBorderData(
-                        show: false,
-                      ),
-                      barGroups: showingBarGroups,
-                      gridData: const FlGridData(show: false),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Income Trend",
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1E293B),
+                      letterSpacing: -0.5,
                     ),
                   ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              const SizedBox(
-                height: 12,
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    isDense: true,
+                    icon: Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Icon(Icons.keyboard_arrow_down_rounded,
+                          color: Colors.grey[700], size: 18),
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    focusColor: Colors.transparent,
+                    value: selectedRange,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF334155),
+                    ),
+                    items: ['Weekly', 'Monthly', 'Yearly']
+                        .map((range) => DropdownMenuItem(
+                              value: range,
+                              child: Text(range),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedRange = value!;
+                        fetchDataFromFirestore();
+                      });
+                    },
+                  ),
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 40),
+          if (isLoading)
+            SizedBox(
+              height: 300,
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: const Color(0xFF6366F1),
+                  strokeWidth: 2,
+                ),
+              ),
+            )
+          else
+            AspectRatio(
+              aspectRatio: 1.6,
+              child: BarChart(
+                BarChartData(
+                  barTouchData: BarTouchData(
+                    enabled: true,
+                    touchTooltipData: BarTouchTooltipData(
+                      tooltipRoundedRadius: 12,
+                      tooltipMargin: 16,
+                      tooltipPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      getTooltipColor: (group) => const Color(0xFF1E293B),
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        return BarTooltipItem(
+                          rod.toY.toStringAsFixed(0),
+                          GoogleFonts.inter(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: (value, meta) {
+                          if (value == 0) return const SizedBox();
+                          return Text(
+                            compactNumber(value),
+                            style: GoogleFonts.inter(
+                              color: Colors.grey[400],
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 32,
+                        getTitlesWidget: (val, meta) {
+                          Widget text = const SizedBox();
+                          if (selectedRange == "Weekly") {
+                            text = weekTitles(val, weeks);
+                          } else if (selectedRange == "Monthly") {
+                            text = monthbottomTile(val);
+                          } else {
+                            text = yearTile(val, years);
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: text,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  barGroups: showingBarGroups,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval:
+                        (widget.totalEventIncome / 4).clamp(100, 1000000),
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: Colors.grey[100],
+                      strokeWidth: 1,
+                    ),
+                  ),
+                  alignment: BarChartAlignment.spaceBetween,
+                  maxY: widget.totalEventIncome * 1.15,
+                ),
+              ),
+            ),
+        ],
       ),
+    );
+  }
+
+  String compactNumber(double number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}M';
+    }
+    if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(0)}k';
+    }
+    return number.toStringAsFixed(0);
+  }
+
+  BarChartGroupData makeGroupData(int x, double y) {
+    return BarChartGroupData(
+      x: x,
+      barRods: [
+        BarChartRodData(
+          toY: y,
+          gradient: const LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [
+              Color(0xFF4338CA), // Indigo 700
+              Color(0xFF818CF8), // Indigo 400
+            ],
+          ),
+          width: selectedRange == 'Monthly' ? 12 : 20, // Thinner, sleeker bars
+          borderRadius: BorderRadius.circular(100), // Fully rounded (stadium)
+          backDrawRodData: BackgroundBarChartRodData(
+            show: true,
+            toY: widget.totalEventIncome * 1.15,
+            color: const Color(0xFFF1F5F9), // Slate 100
+          ),
+        ),
+      ],
     );
   }
 }

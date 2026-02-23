@@ -22,6 +22,7 @@ class _SeasonOverViewState extends State<SeasonOverView>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Future<List<SeasonAward>> awardsFuture;
+  bool get isLargeScreen => MediaQuery.of(context).size.width > 1024;
 
   Future<List<SeasonAward>> _fetchAwards() async {
     final snap = await FirebaseFirestore.instance
@@ -92,7 +93,7 @@ class _SeasonOverViewState extends State<SeasonOverView>
           ),
           child: CustomScrollView(
             slivers: [
-              _buildHeader(scrWidth),
+              // _buildHeader(scrWidth),
               FutureBuilder<List<SeasonAward>>(
                 future: awardsFuture,
                 builder: (context, snapshot) {
@@ -304,6 +305,18 @@ class _EnhancedAwardCardState extends State<EnhancedAwardCard>
   late Animation<double> _scaleAnimation;
   late Animation<double> _elevationAnimation;
   bool _isHovered = false;
+  bool get isLargeScreen => MediaQuery.of(context).size.width > 1024;
+  bool get isMediumScreen =>
+      MediaQuery.of(context).size.width > 600 &&
+      MediaQuery.of(context).size.width <= 1024;
+  bool get isSmallScreen => MediaQuery.of(context).size.width <= 600;
+
+  double getResponsiveFontSize(
+      double mobileSize, double tabletSize, double desktopSize) {
+    if (isLargeScreen) return desktopSize;
+    if (isMediumScreen) return tabletSize;
+    return mobileSize;
+  }
 
   @override
   void initState() {
@@ -570,7 +583,7 @@ class _EnhancedAwardCardState extends State<EnhancedAwardCard>
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.inter(
-              fontSize: kIsWeb ? widget.scrWidth * 0.012 : 14,
+              fontSize: getResponsiveFontSize(17, 23, 25),
               fontWeight: FontWeight.bold,
               color: Colors.white,
               letterSpacing: 0.5,

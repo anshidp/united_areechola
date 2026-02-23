@@ -27,6 +27,11 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
   final amountController = TextEditingController();
   String selectedMonth = DateFormat('yyyy-MM').format(DateTime.now());
   int unpaidUsers = 0;
+  
+  // Bulk Subscription State
+  bool isBulk = false;
+  DateTime? bulkStartDate;
+  DateTime? bulkEndDate;
 
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
@@ -538,6 +543,191 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
                 ),
               ],
             ),
+            // Bulk Mode Toggle
+            Row(
+              children: [
+                Checkbox(
+                  value: isBulk,
+                  onChanged: (value) {
+                    setState(() {
+                      isBulk = value ?? false;
+                    });
+                  },
+                ),
+                Text(
+                  "Bulk Subscription (Range)",
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            if (isBulk) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "From Month",
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: bulkStartDate ?? DateTime.now(),
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+                            if (picked != null) {
+                              setState(() {
+                                bulkStartDate = picked;
+                              });
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey[300]!),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.calendar_today,
+                                    size: 16, color: Colors.grey[600]),
+                                const SizedBox(width: 8),
+                                Text(
+                                  bulkStartDate != null
+                                      ? DateFormat('MMM yyyy')
+                                          .format(bulkStartDate!)
+                                      : "Select",
+                                  style: GoogleFonts.inter(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "To Month",
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: bulkEndDate ?? DateTime.now(),
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+                            if (picked != null) {
+                              setState(() {
+                                bulkEndDate = picked;
+                              });
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey[300]!),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.calendar_today,
+                                    size: 16, color: Colors.grey[600]),
+                                const SizedBox(width: 8),
+                                Text(
+                                  bulkEndDate != null
+                                      ? DateFormat('MMM yyyy')
+                                          .format(bulkEndDate!)
+                                      : "Select",
+                                  style: GoogleFonts.inter(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ] else ...[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Select Month",
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.parse("$selectedMonth-01"),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _updateSelectedMonth(
+                              DateFormat('yyyy-MM').format(picked));
+                        });
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today,
+                              size: 16, color: Colors.grey[600]),
+                          const SizedBox(width: 8),
+                          Text(
+                            DateFormat('MMM yyyy')
+                                .format(DateTime.parse("$selectedMonth-01")),
+                            style: GoogleFonts.inter(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
 
             const SizedBox(height: 32),
 
@@ -647,60 +837,160 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
       return;
     }
 
-    bool? isAlreadyPaid = await ref
-        .read(subcriptionrepositoryprovider)
-        .isAlreadyPaid(
-            userId: ref.read(dropdownselectedItem) ?? "",
-            paiddate: selectedMonth);
+    if (isBulk) {
+      if (bulkStartDate == null || bulkEndDate == null) {
+        showSnackBarMsg(context, "Please select both start and end months", Colors.red);
+        return;
+      }
+      if (bulkEndDate!.isBefore(bulkStartDate!)) {
+        showSnackBarMsg(context, "End month must be after start month", Colors.red);
+        return;
+      }
 
-    if (isAlreadyPaid != null && isAlreadyPaid) {
-      showSnackBarMsg(
-          context,
-          "${ref.read(dropdownselectedUsername)} is already paid this month",
-          Colors.red);
-      return;
-    }
+      // Check for existing payments in range
+      List<DateTime> monthsInRange = [];
+      DateTime current = DateTime(bulkStartDate!.year, bulkStartDate!.month, 1);
+      DateTime end = DateTime(bulkEndDate!.year, bulkEndDate!.month, 1);
 
-    bool confirm = await addDialog(context, "Do you want to add subscription?");
+      while (current.isBefore(end) || current.isAtSameMomentAs(end)) {
+        monthsInRange.add(current);
+        current = DateTime(current.year, current.month + 1, 1);
+      }
 
-    if (confirm) {
-      SubcriptionModel subcription = SubcriptionModel(
-        startDate: DateTime.parse("$selectedMonth-01"),
-        status: 0,
-        createdDate: DateTime.now(),
-        delete: false,
-        amount: subcriptionAmount,
-        userId: ref.read(dropdownselectedItem),
-      );
+      for (var monthDate in monthsInRange) {
+        String monthStr = DateFormat('yyyy-MM').format(monthDate);
+        bool? isAlreadyPaid = await ref
+            .read(subcriptionrepositoryprovider)
+            .isAlreadyPaid(
+                userId: ref.read(dropdownselectedItem) ?? "",
+                paiddate: monthStr);
 
-      ref
+        if (isAlreadyPaid != null && isAlreadyPaid) {
+          showSnackBarMsg(
+              context,
+              "${ref.read(dropdownselectedUsername)} is already paid for ${DateFormat('MMM yyyy').format(monthDate)}",
+              Colors.red);
+          return;
+        }
+      }
+
+      bool confirm = await addDialog(context, "Add subscription for ${monthsInRange.length} months?");
+      
+      if (confirm) {
+        List<SubcriptionModel> subscriptions = [];
+        for (var monthDate in monthsInRange) {
+           subscriptions.add(SubcriptionModel(
+            startDate: monthDate,
+            status: 0,
+            createdDate: DateTime.now(),
+            delete: false,
+            amount: subcriptionAmount,
+            userId: ref.read(dropdownselectedItem),
+          ));
+        }
+
+        await ref
+            .read(subcriptionrepositoryprovider)
+            .addBulkSubscription(subscriptions: subscriptions);
+
+        showSnackBarMsg(context, "Bulk subscription added successfully", Colors.green);
+
+        // Send Notification
+        final username = ref.read(dropdownselectedUsername);
+        String startMonthName = DateFormat("MMM yyyy").format(bulkStartDate!);
+        String endMonthName = DateFormat("MMM yyyy").format(bulkEndDate!);
+
+        final notification = NotificationModel(
+            title: "Bulk Subscription Paid",
+            body:
+                "${username?.toUpperCase()} has paid ₹${(subcriptionAmount ?? 0) * monthsInRange.length} for $startMonthName to $endMonthName",
+            createdDate: DateTime.now(),
+            delete: false);
+
+        await ref
+            .read(subcriptionrepositoryprovider)
+            .addNotificationData(notification);
+            
+         await ref.read(subcriptionrepositoryprovider).sendNotificationAdmin({
+          "title": notification.title,
+          "body": notification.body,
+        });
+
+        // Reset
+        _resetForm();
+      }
+
+    } else {
+      // Single Subscription
+      bool? isAlreadyPaid = await ref
           .read(subcriptionrepositoryprovider)
-          .addsubcription(subcriptionModel: subcription);
+          .isAlreadyPaid(
+              userId: ref.read(dropdownselectedItem) ?? "",
+              paiddate: selectedMonth);
 
-      showSnackBarMsg(context, "Subscription added successfully", Colors.green);
+      if (isAlreadyPaid != null && isAlreadyPaid) {
+        showSnackBarMsg(
+            context,
+            "${ref.read(dropdownselectedUsername)} is already paid this month",
+            Colors.red);
+        return;
+      }
 
-      final username = ref.read(dropdownselectedUsername);
-      final subcriptiondate = DateTime.parse("$selectedMonth-01");
-      String monthName = DateFormat("MMMM").format(subcriptiondate);
-      String yearName = DateFormat("yyyy").format(subcriptiondate);
+      bool confirm = await addDialog(context, "Do you want to add subscription?");
 
-      final notification = NotificationModel(
-          title: "Subscription Paid",
-          body:
-              "${username?.toUpperCase()} has paid ₹$subcriptionAmount for the $monthName $yearName subscription",
+      if (confirm) {
+        SubcriptionModel subcription = SubcriptionModel(
+          startDate: DateTime.parse("$selectedMonth-01"),
+          status: 0,
           createdDate: DateTime.now(),
-          delete: false);
+          delete: false,
+          amount: subcriptionAmount,
+          userId: ref.read(dropdownselectedItem),
+        );
 
-      await ref
-          .read(subcriptionrepositoryprovider)
-          .addNotificationData(notification);
+        ref
+            .read(subcriptionrepositoryprovider)
+            .addsubcription(subcriptionModel: subcription);
 
-      // Clear form
-      amountController.clear();
-      ref.read(dropdownselectedItem.notifier).state = null;
-      ref.read(dropdownselectedMonth.notifier).state = null;
-      ref.read(addeventbool.notifier).state = false;
+        showSnackBarMsg(context, "Subscription added successfully", Colors.green);
+
+        final username = ref.read(dropdownselectedUsername);
+        final subcriptiondate = DateTime.parse("$selectedMonth-01");
+        String monthName = DateFormat("MMMM").format(subcriptiondate);
+        String yearName = DateFormat("yyyy").format(subcriptiondate);
+
+        final notification = NotificationModel(
+            title: "Subscription Paid",
+            body:
+                "${username?.toUpperCase()} has paid ₹${subcriptionAmount ?? 0} for the $monthName $yearName subscription",
+            createdDate: DateTime.now(),
+            delete: false);
+
+        await ref
+            .read(subcriptionrepositoryprovider)
+            .addNotificationData(notification);
+
+        await ref.read(subcriptionrepositoryprovider).sendNotificationAdmin({
+          "title": notification.title,
+          "body": notification.body,
+        });
+
+        // Clear form
+        _resetForm();
+      }
     }
+  }
+
+  void _resetForm() {
+    amountController.clear();
+    ref.read(dropdownselectedItem.notifier).state = null;
+    ref.read(dropdownselectedMonth.notifier).state = null;
+    ref.read(addeventbool.notifier).state = false;
+    setState(() {
+      isBulk = false;
+      bulkStartDate = null;
+      bulkEndDate = null;
+    });
   }
 
   Widget _buildUnpaidUsersSection(Size size) {
@@ -918,6 +1208,8 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
     );
   }
 
+  final searchController = TextEditingController();
+
   Widget _buildTransactionsTable() {
     return Container(
       decoration: BoxDecoration(
@@ -937,24 +1229,54 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
           children: [
             Padding(
               padding: const EdgeInsets.all(20),
-              child: Row(
+              child: Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.green[50],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.receipt_long,
-                        color: Colors.green[600], size: 20),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.receipt_long,
+                            color: Colors.green[600], size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        "Transaction History",
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    "Transaction History",
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey[800],
+                  const SizedBox(height: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50], // Light background for search
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: TextField(
+                      controller: searchController,
+                      onChanged: (value) {
+                        setState(() {}); // Rebuild to filter
+                      },
+                      decoration: InputDecoration(
+                        hintText: "Search by member name...",
+                        hintStyle: GoogleFonts.inter(
+                          color: Colors.grey[500],
+                          fontSize: 14,
+                        ),
+                        prefixIcon:
+                            Icon(Icons.search, color: Colors.grey[400]),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                      ),
                     ),
                   ),
                 ],
@@ -995,9 +1317,41 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
                   );
                 }
 
+                // Filtering Logic
+                final allTransactions = snapshot.data!;
+                final filteredTransactions = allTransactions.where((transaction) {
+                  final name = users[transaction.userId]?.toString().toLowerCase() ?? "";
+                  final searchText = searchController.text.toLowerCase();
+                  return name.contains(searchText);
+                }).toList();
+
+                if (filteredTransactions.isEmpty) {
+                   return Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(Icons.search_off,
+                              color: Colors.grey[400], size: 48),
+                          const SizedBox(height: 16),
+                          Text(
+                            "No results found for \"${searchController.text}\"",
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: SizedBox(
+                    width: MediaQuery.of(context).size.width, 
                     child: DataTable(
                       headingTextStyle: GoogleFonts.inter(
                         fontWeight: FontWeight.w700,
@@ -1015,7 +1369,7 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
                       ),
                       headingRowColor: WidgetStatePropertyAll(Colors.grey[50]),
                       columns: _buildDataColumns(),
-                      rows: _buildDataRows(snapshot.data!),
+                      rows: _buildDataRows(filteredTransactions),
                     ),
                   ),
                 );

@@ -61,6 +61,7 @@ dependencies:
   fl_chart: ^0.69.0
   shared_preferences: 
   
+  
   flutter_launcher_icons: ^0.14.1
   cached_network_image_platform_interface: ^4.1.1
   dropdown_textfield: ^1.2.0
