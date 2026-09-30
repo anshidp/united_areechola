@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:united_areechola/Models/event_expense_model.dart';
 import 'package:united_areechola/Models/eventmodel.dart';
@@ -28,12 +29,7 @@ class EventTransactionsScreen extends ConsumerStatefulWidget {
       _EventTransactionsState();
 }
 
-class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _slideAnimation;
-  late Animation<double> _fadeAnimation;
-
+class _EventTransactionsState extends ConsumerState<EventTransactionsScreen> {
   Map<String, dynamic> users = {};
   final amountController = TextEditingController();
   final searchController = TextEditingController();
@@ -49,30 +45,20 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
 
   double highestamount = 0;
   String highestPayer = "";
+  final currencyFormatter = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
 
   @override
   void initState() {
     super.initState();
     getUsers();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _slideAnimation = Tween<double>(begin: -1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _animationController.forward();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
     amountController.dispose();
     searchController.dispose();
     expenseController.dispose();
+    usernameController.dispose();
     super.dispose();
   }
 
@@ -111,44 +97,37 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
     var expense = ref.watch(isAddExpenses);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF1F5F9),
       appBar: _buildModernAppBar(),
-      body: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          return Transform.translate(
-            offset: Offset(_slideAnimation.value * scrWidth, 0),
-            child: Opacity(
-              opacity: _fadeAnimation.value,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildEventHeader(),
-                    const SizedBox(height: 24),
-                    if (ref.watch(isDemoUser))
-                      _buildDemoUserCard()
-                    else ...[
-                      _buildActionButtons(
-                          transaction, expense, scrWidth, scrHeight),
-                      const SizedBox(height: 24),
-                      if (transaction && isAdmin) _buildTransactionForm(),
-                      if (expense && isAdmin) _buildExpenseForm(),
-                      _buildStatisticsCards(scrWidth),
-                      const SizedBox(height: 24),
-                      _buildActionsRow(scrWidth, scrHeight),
-                      const SizedBox(height: 24),
-                      _buildSearchSection(),
-                      const SizedBox(height: 20),
-                      _buildTransactionsTable(),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: EdgeInsets.symmetric(
+          horizontal: scrWidth > 900 ? 36 : (scrWidth > 600 ? 24 : 16),
+          vertical: 20,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildEventHeader(scrWidth),
+            const SizedBox(height: 20),
+            if (ref.watch(isDemoUser))
+              _buildDemoUserCard()
+            else ...[
+              _buildActionButtons(
+                  transaction, expense, scrWidth, scrHeight),
+              const SizedBox(height: 20),
+              if (transaction && isAdmin) _buildTransactionForm(),
+              if (expense && isAdmin) _buildExpenseForm(),
+              _buildStatisticsCards(scrWidth),
+              const SizedBox(height: 20),
+              _buildActionsRow(scrWidth, scrHeight),
+              const SizedBox(height: 20),
+              _buildSearchSection(),
+              const SizedBox(height: 20),
+              _buildTransactionsTable(),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -157,60 +136,68 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
     return AppBar(
       elevation: 0,
       backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
       leading: Container(
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withOpacity(0.06),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.grey),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       title: Text(
         'Event Transactions',
-        style: TextStyle(
-          color: Colors.grey.shade800,
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
+        style: GoogleFonts.poppins(
+          color: const Color(0xFF0F172A),
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
         ),
       ),
       actions: [
         if (ref.watch(isAddTransaction) && !ref.watch(isDemoUser))
           Container(
-            margin: const EdgeInsets.all(8),
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
               ),
               borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF4F46E5).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () => ref.read(isDemoUser.notifier).state = true,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.person_add, color: Colors.white, size: 18),
-                      SizedBox(width: 4),
+                      const Icon(Icons.person_add_alt_1_rounded, color: Colors.white, size: 16),
+                      const SizedBox(width: 6),
                       Text(
                         'Demo User',
-                        style: TextStyle(
+                        style: GoogleFonts.poppins(
                           color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -219,21 +206,26 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
               ),
             ),
           ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 4),
       ],
     );
   }
 
-  Widget _buildEventHeader() {
+  Widget _buildEventHeader(double scrWidth) {
+    final double target = widget.eventModel.targetamount ?? 0;
+    final createdDateStr = widget.eventModel.createdDate != null
+        ? DateFormat("dd MMM yyyy").format(widget.eventModel.createdDate!)
+        : 'N/A';
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(scrWidth > 600 ? 24 : 18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+          colors: [Color(0xFF4F46E5), Color(0xFF7C3AED), Color(0xFF6366F1)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF4F46E5).withOpacity(0.3),
@@ -242,44 +234,89 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.event_note,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.eventModel.eventname?.toUpperCase() ?? 'EVENT',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.event_available_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.eventModel.eventname?.toUpperCase() ?? 'EVENT',
+                      style: GoogleFonts.poppins(
+                        fontSize: scrWidth > 600 ? 22 : 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Created on $createdDateStr',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (target > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        "Target Goal",
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                      ),
+                      Text(
+                        currencyFormatter.format(target),
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amberAccent,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Created on ${DateFormat("dd MMM yyyy").format(widget.eventModel.createdDate!)}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
+            ],
           ),
+          if ((widget.eventModel.discription ?? '').isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(
+              widget.eventModel.discription!,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: Colors.white.withOpacity(0.9),
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -290,11 +327,11 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
@@ -311,17 +348,17 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
         Expanded(
           child: _buildActionButton(
             title: 'Add Income',
-            icon: Icons.add_circle_outline,
+            icon: Icons.add_circle_outline_rounded,
             gradient: const LinearGradient(
                 colors: [Color(0xFF10B981), Color(0xFF059669)]),
             onTap: () => ref.read(isAddTransaction.notifier).state = true,
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 14),
         Expanded(
           child: _buildActionButton(
             title: 'Add Expense',
-            icon: Icons.remove_circle_outline,
+            icon: Icons.remove_circle_outline_rounded,
             gradient: const LinearGradient(
                 colors: [Color(0xFFEF4444), Color(0xFFDC2626)]),
             onTap: () => ref.read(isAddExpenses.notifier).state = true,
@@ -340,11 +377,11 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
     return Container(
       decoration: BoxDecoration(
         gradient: gradient,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -352,10 +389,10 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -363,10 +400,10 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 const SizedBox(width: 8),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: GoogleFonts.poppins(
                     color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
                 ),
               ],
@@ -377,16 +414,63 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
     );
   }
 
+  Widget _buildPresetChips(TextEditingController controller) {
+    final presets = [500, 1000, 2500, 5000, 10000];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Quick Amounts",
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade600,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: presets.map((val) {
+            return InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () {
+                double current = double.tryParse(controller.text) ?? 0;
+                controller.text = (current + val).toStringAsFixed(0);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4F46E5).withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF4F46E5).withOpacity(0.2)),
+                ),
+                child: Text(
+                  "+₹$val",
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF4F46E5),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
   Widget _buildDemoUserTransactionForm() {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -400,40 +484,42 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
-                  Icons.account_balance_wallet,
+                  Icons.account_balance_wallet_rounded,
                   color: Color(0xFF10B981),
                   size: 24,
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                "Add Income Transaction",
-                style: TextStyle(
+              Text(
+                "Add Income Transaction (Demo User)",
+                style: GoogleFonts.poppins(
                   fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           _buildFormField(
             label: "Amount",
             controller: amountController,
-            hintText: "Enter amount",
-            icon: Icons.monetization_on,
+            hintText: "Enter amount (e.g. 1000)",
+            icon: Icons.monetization_on_rounded,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          _buildPresetChips(amountController),
+          const SizedBox(height: 18),
           _buildFormField(
-            label: "Enter User",
+            label: "Enter User Name",
             controller: usernameController,
-            hintText: "Enter User",
-            icon: Icons.monetization_on,
+            hintText: "Enter User name",
+            icon: Icons.person_rounded,
           ),
           const SizedBox(height: 24),
           _buildFormActions(
@@ -453,7 +539,7 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
               }
               if (amountController.text.isEmpty) {
                 return showSnackBarMsg(
-                    context, "Please enter a amount", Colors.red);
+                    context, "Please enter an amount", Colors.red);
               }
               bool confirm =
                   await addDialog(context, "Do you want add Transaction?");
@@ -463,11 +549,13 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                     eventId: widget.eventModel.eventId ?? "");
                 if (context.mounted) {
                   showSnackBarMsg(
-                      context, "Transaction Added successfull", Colors.red);
+                      context, "Transaction Added successfully", Colors.green);
                 }
 
                 amountController.clear();
                 usernameController.clear();
+                ref.read(isDemoUser.notifier).state = false;
+                ref.read(isAddTransaction.notifier).state = false;
               }
             },
             secondaryAction: () {
@@ -488,14 +576,15 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 14,
             offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,38 +592,40 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.account_balance_wallet,
+                  Icons.arrow_circle_up_rounded,
                   color: Color(0xFF10B981),
                   size: 24,
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                "Add Income Transaction",
-                style: TextStyle(
+              Text(
+                "Add Income Contribution",
+                style: GoogleFonts.poppins(
                   fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           _buildFormField(
-            label: "Amount",
+            label: "Amount (₹)",
             controller: amountController,
             hintText: "Enter amount",
-            icon: Icons.monetization_on,
+            icon: Icons.payments_rounded,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          _buildPresetChips(amountController),
+          const SizedBox(height: 18),
           _buildUserDropdown(),
           const SizedBox(height: 24),
           _buildFormActions(
@@ -571,6 +662,7 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 }
                 cleardropdown();
                 amountController.clear();
+                ref.read(isAddTransaction.notifier).state = false;
               }
             },
             secondaryAction: () {
@@ -589,14 +681,15 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 14,
             offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -604,47 +697,49 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEF4444).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.receipt_long,
+                  Icons.arrow_circle_down_rounded,
                   color: Color(0xFFEF4444),
                   size: 24,
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                "Add Expense",
-                style: TextStyle(
+              Text(
+                "Add Event Expense",
+                style: GoogleFonts.poppins(
                   fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          _buildFormField(
-            label: "Expense Name",
-            controller: expenseController,
-            hintText: "Enter expense description",
-            icon: Icons.description,
-          ),
           const SizedBox(height: 20),
           _buildFormField(
-            label: "Amount",
+            label: "Expense Item Name",
+            controller: expenseController,
+            hintText: "e.g. Catering, Venue Rent, Trophies",
+            icon: Icons.receipt_long_rounded,
+          ),
+          const SizedBox(height: 18),
+          _buildFormField(
+            label: "Amount (₹)",
             controller: amountController,
-            hintText: "Enter amount",
-            icon: Icons.monetization_on,
+            hintText: "Enter expense amount",
+            icon: Icons.payments_rounded,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
+          const SizedBox(height: 12),
+          _buildPresetChips(amountController),
           const SizedBox(height: 24),
           _buildFormActions(
-            primaryTitle: "Add Expense",
+            primaryTitle: "Save Expense",
             primaryAction: () async {
               final eventExpenses = EventExpenseModel(
                 expenseName: expenseController.text.trim(),
@@ -676,6 +771,7 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 }
                 expenseController.clear();
                 amountController.clear();
+                ref.read(isAddExpenses.notifier).state = false;
               }
             },
             secondaryAction: () {
@@ -702,10 +798,10 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 14,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Colors.grey.shade700,
           ),
         ),
         const SizedBox(height: 8),
@@ -713,10 +809,11 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
           controller: controller,
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
+          style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey.shade900),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: TextStyle(color: Colors.grey.shade400),
-            prefixIcon: Icon(icon, color: const Color(0xFF667EEA), size: 20),
+            hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade400),
+            prefixIcon: Icon(icon, color: const Color(0xFF4F46E5), size: 20),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey.shade300),
@@ -727,12 +824,12 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF667EEA), width: 2),
+              borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2),
             ),
             filled: true,
-            fillColor: Colors.grey.shade50,
+            fillColor: const Color(0xFFF8FAFC),
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
         ),
       ],
@@ -746,12 +843,12 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Select User",
-              style: TextStyle(
-                fontSize: 14,
+            Text(
+              "Select Contributor User",
+              style: GoogleFonts.poppins(
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: Colors.grey.shade700,
               ),
             ),
             const SizedBox(height: 8),
@@ -773,10 +870,10 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 }
               },
               textFieldDecoration: InputDecoration(
-                hintText: 'Select user',
-                hintStyle: TextStyle(color: Colors.grey.shade400),
-                prefixIcon: const Icon(Icons.person,
-                    color: Color(0xFF667EEA), size: 20),
+                hintText: 'Search or select user...',
+                hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade400),
+                prefixIcon: const Icon(Icons.person_outline_rounded,
+                    color: Color(0xFF4F46E5), size: 20),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.grey.shade300),
@@ -788,12 +885,12 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      const BorderSide(color: Color(0xFF667EEA), width: 2),
+                      const BorderSide(color: Color(0xFF4F46E5), width: 2),
                 ),
                 filled: true,
-                fillColor: Colors.grey.shade50,
+                fillColor: const Color(0xFFF8FAFC),
                 contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
             ),
           ],
@@ -821,26 +918,34 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
               onTap: secondaryAction,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
                 child: Text(
                   'Cancel',
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: Colors.grey.shade700,
+                    fontSize: 13,
                   ),
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 14),
         Container(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+              colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
             ),
             borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF4F46E5).withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Material(
             color: Colors.transparent,
@@ -853,9 +958,10 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 child: Text(
                   primaryTitle,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    fontSize: 13,
                   ),
                 ),
               ),
@@ -869,28 +975,10 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
   Widget _buildStatisticsCards(double scrWidth) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 600) {
-          // Mobile layout - stack cards vertically
+        if (constraints.maxWidth < 650) {
           return Column(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                      child: _buildStatCard(
-                          "Event Name",
-                          widget.eventModel.eventname ?? "",
-                          const Color(0xFF667EEA),
-                          Icons.event)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                      child: _buildStatCard(
-                          "Date",
-                          DateFormat("dd-MM-yyyy")
-                              .format(widget.eventModel.createdDate!),
-                          const Color(0xFFEF4444),
-                          Icons.calendar_today)),
-                ],
-              ),
+             
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -902,26 +990,25 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
             ],
           );
         } else {
-          // Desktop layout - all cards in one row
           return Row(
             children: [
               Expanded(
                   child: _buildStatCard(
                       "Event Name",
                       widget.eventModel.eventname ?? "",
-                      const Color(0xFF667EEA),
-                      Icons.event)),
-              const SizedBox(width: 16),
+                      const Color(0xFF4F46E5),
+                      Icons.event_rounded)),
+              const SizedBox(width: 14),
               Expanded(
                   child: _buildStatCard(
-                      "Date",
+                      "Created Date",
                       DateFormat("dd-MM-yyyy")
                           .format(widget.eventModel.createdDate!),
-                      const Color(0xFFEF4444),
-                      Icons.calendar_today)),
-              const SizedBox(width: 16),
+                      const Color(0xFF64748B),
+                      Icons.calendar_month_rounded)),
+              const SizedBox(width: 14),
               Expanded(child: _buildIncomeCard()),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(child: _buildExpenseCard()),
             ],
           );
@@ -933,17 +1020,18 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
   Widget _buildStatCard(
       String title, String value, Color color, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 3),
           ),
         ],
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -952,28 +1040,28 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: 22),
           ),
           const SizedBox(height: 12),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: Colors.grey.shade500,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 16,
+            style: GoogleFonts.poppins(
+              fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Colors.grey.shade900,
             ),
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ],
@@ -982,25 +1070,42 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
   }
 
   Widget _buildIncomeCard() {
-    return StreamBuilder<double>(
+    return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection("events")
           .doc(widget.eventModel.eventId)
-          .snapshots()
-          .map((event) => event["totalIncome"].toDouble()),
+          .collection("Transactions")
+          .snapshots(),
       builder: (context, snapshot) {
+        double calcIncome = 0;
+        if (snapshot.hasData) {
+          try {
+            for (var doc in snapshot.data!.docs) {
+              final data = doc.data() as Map<String, dynamic>;
+              // Only include non-deleted transactions
+              if (data["delete"] == true) continue;
+              final rawAmount = data["amount"];
+              if (rawAmount != null) {
+                calcIncome += (rawAmount as num).toDouble();
+              }
+            }
+          } catch (e) {
+            debugPrint("Error calculating total income: $e");
+          }
+        }
         return Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withOpacity(0.04),
                 blurRadius: 10,
-                offset: const Offset(0, 4),
+                offset: const Offset(0, 3),
               ),
             ],
+            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1009,29 +1114,29 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.trending_up,
-                    color: Color(0xFF10B981), size: 24),
+                child: const Icon(Icons.trending_up_rounded,
+                    color: Color(0xFF10B981), size: 22),
               ),
               const SizedBox(height: 12),
               Text(
-                'Income',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
+                'Total Income',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: Colors.grey.shade500,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 4),
               AnimatedFlipCounter(
                   prefix: "₹",
-                  duration: Duration(milliseconds: 1500),
-                  value: snapshot.data ?? 0.0,
-                  textStyle: TextStyle(
-                    fontSize: 18,
+                  duration: const Duration(milliseconds: 1000),
+                  value: calcIncome,
+                  textStyle: GoogleFonts.poppins(
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF10B981),
+                    color: const Color(0xFF059669),
                   )),
             ],
           ),
@@ -1041,16 +1146,31 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
   }
 
   Widget _buildExpenseCard() {
-    return StreamBuilder<double>(
+    return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection("events")
           .doc(widget.eventModel.eventId)
-          .snapshots()
-          .map((event) => event["totalexpense"].toDouble()),
+          .collection("expense")
+          .snapshots(),
       builder: (context, snapshot) {
+        double calcExpense = 0;
+        if (snapshot.hasData) {
+          try {
+            for (var doc in snapshot.data!.docs) {
+              final data = doc.data() as Map<String, dynamic>;
+              if (data["delete"] == true) continue;
+              final rawExp = data["expenseAmount"];
+              if (rawExp != null) {
+                calcExpense += (rawExp as num).toDouble();
+              }
+            }
+          } catch (e) {
+            debugPrint("Error calculating total expense: $e");
+          }
+        }
         return GestureDetector(
           onTap: () {
-            if ((snapshot.data ?? 0) > 0) {
+            if (calcExpense > 0) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -1062,66 +1182,66 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
             }
           },
           child: Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withOpacity(0.04),
                   blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  offset: const Offset(0, 3),
                 ),
               ],
+              border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.trending_down,
-                      color: Color(0xFFEF4444), size: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.trending_down_rounded,
+                          color: Color(0xFFEF4444), size: 22),
+                    ),
+                    if (calcExpense > 0)
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Color(0xFFEF4444)),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Expenses',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
+                  'Total Expenses',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: Colors.grey.shade500,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 4),
                 AnimatedFlipCounter(
                   prefix: "₹",
-                  duration: Duration(milliseconds: 1500),
-                  value: snapshot.data ?? 0.0,
-                  textStyle: TextStyle(
-                    fontSize: 18,
+                  duration: const Duration(milliseconds: 1000),
+                  value: calcExpense,
+                  textStyle: GoogleFonts.poppins(
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFEF4444),
+                    color: const Color(0xFFDC2626),
                   ),
                 ),
-                // Text(
-                //   '₹${snapshot.data?.toStringAsFixed(0) ?? '0'}',
-                //   style: const TextStyle(
-                //     fontSize: 18,
-                //     fontWeight: FontWeight.bold,
-                //     color: Color(0xFFEF4444),
-                //   ),
-                // ),
-                if ((snapshot.data ?? 0) > 0) ...[
-                  const SizedBox(height: 4),
+                if (calcExpense > 0) ...[
+                  const SizedBox(height: 2),
                   Text(
                     'Tap to view details',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey.shade500,
-                      fontStyle: FontStyle.italic,
+                    style: GoogleFonts.poppins(
+                      fontSize: 9,
+                      color: Colors.grey.shade400,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -1140,12 +1260,12 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
         Container(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+              colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
             ),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF667EEA).withOpacity(0.3),
+                color: const Color(0xFF4F46E5).withOpacity(0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -1154,7 +1274,7 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               onTap: () {
                 Transactionpdf().downloadPdf(
                   ctx: context,
@@ -1168,14 +1288,14 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.download, color: Colors.white, size: 18),
+                    const Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 18),
                     const SizedBox(width: 8),
                     Text(
-                      "Download PDF",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
+                      "Download PDF Report",
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
                         color: Colors.white,
-                        fontSize: scrWidth > 600 ? 14 : 12,
+                        fontSize: scrWidth > 600 ? 13 : 12,
                       ),
                     ),
                   ],
@@ -1190,15 +1310,15 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
 
   Widget _buildSearchSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1210,52 +1330,53 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF667EEA).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: const Color(0xFF4F46E5).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
-                  Icons.search,
-                  color: Color(0xFF667EEA),
+                  Icons.person_search_rounded,
+                  color: Color(0xFF4F46E5),
                   size: 20,
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 "Search Transactions",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           TextFormField(
             controller: searchController,
             onChanged: (val) => ref.read(usersearch.notifier).state = val,
+            style: GoogleFonts.poppins(fontSize: 14),
             decoration: InputDecoration(
-              hintText: "Search by user name...",
-              hintStyle: TextStyle(color: Colors.grey.shade400),
+              hintText: "Type user name to filter transactions...",
+              hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade400),
               prefixIcon:
-                  const Icon(Icons.search, color: Color(0xFF667EEA), size: 20),
+                  const Icon(Icons.search_rounded, color: Color(0xFF4F46E5), size: 20),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: BorderSide(color: Colors.grey.shade200),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: BorderSide(color: Colors.grey.shade200),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide:
-                    const BorderSide(color: Color(0xFF667EEA), width: 2),
+                    const BorderSide(color: Color(0xFF4F46E5), width: 1.5),
               ),
               filled: true,
-              fillColor: Colors.grey.shade50,
+              fillColor: const Color(0xFFF8FAFC),
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
         ],
@@ -1276,32 +1397,33 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
               data: (transactionData) {
                 if (transactionData.isEmpty) {
                   return Container(
+                    width: double.infinity,
                     padding: const EdgeInsets.all(40),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: Column(
                       children: [
                         Icon(
                           Icons.receipt_long_outlined,
-                          size: 64,
-                          color: Colors.grey.shade400,
+                          size: 56,
+                          color: Colors.grey.shade300,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           "No Transactions Found",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade700,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Text(
-                          "Add your first transaction to get started",
-                          style: TextStyle(
-                            fontSize: 14,
+                          "Add an income transaction above to see it listed here",
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
                             color: Colors.grey.shade500,
                           ),
                         ),
@@ -1313,12 +1435,12 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 return Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withOpacity(0.04),
                         blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
@@ -1326,29 +1448,34 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(18),
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF667EEA).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.list_alt,
-                                color: Color(0xFF667EEA),
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              "Transaction History (${transactionData.length})",
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF4F46E5).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.receipt_rounded,
+                                    color: Color(0xFF4F46E5),
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  "Transaction History (${transactionData.length})",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade900,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -1356,40 +1483,40 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: DataTable(
-                          headingTextStyle: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                          headingTextStyle: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Colors.grey.shade800,
                           ),
-                          dataTextStyle: const TextStyle(
+                          dataTextStyle: GoogleFonts.poppins(
                             fontWeight: FontWeight.w500,
-                            color: Colors.black87,
+                            fontSize: 13,
+                            color: Colors.grey.shade900,
                           ),
                           decoration: const BoxDecoration(
                             borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(16),
-                              bottomRight: Radius.circular(16),
+                              bottomLeft: Radius.circular(18),
+                              bottomRight: Radius.circular(18),
                             ),
                           ),
                           headingRowColor:
                               WidgetStateProperty.all(const Color(0xFFF8FAFC)),
-                          columns: [
-                            const DataColumn(
-                              label: Text("No."),
+                          columns: const [
+                            DataColumn(
+                              label: Text("#"),
                             ),
-                            const DataColumn(
-                              label: Text("Name"),
+                            DataColumn(
+                              label: Text("Contributor Name"),
                             ),
-                            const DataColumn(
+                            DataColumn(
                               label: Text("Amount"),
                             ),
-                            if (kIsWeb) ...[
-                              const DataColumn(
-                                label: Text("Date"),
-                              ),
-                              const DataColumn(
-                                label: Text("Actions"),
-                              ),
-                            ],
+                            DataColumn(
+                              label: Text("Date"),
+                            ),
+                            DataColumn(
+                              label: Text("Actions"),
+                            ),
                           ],
                           rows: List.generate(transactionData.length, (index) {
                             final transaction = transactionData[index];
@@ -1406,15 +1533,16 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF667EEA)
+                                      color: const Color(0xFF4F46E5)
                                           .withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
                                       "${index + 1}",
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF667EEA),
+                                      style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: const Color(0xFF4F46E5),
                                       ),
                                     ),
                                   ),
@@ -1423,7 +1551,7 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                                   transaction.userId == ""
                                       ? Text(
                                           transaction.username ?? "",
-                                          style: const TextStyle(
+                                          style: GoogleFonts.poppins(
                                               fontWeight: FontWeight.w600),
                                         )
                                       : FutureBuilder<String>(
@@ -1438,7 +1566,7 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                                             return Text(
                                               snapshot.data?.toUpperCase() ??
                                                   "Loading...",
-                                              style: const TextStyle(
+                                              style: GoogleFonts.poppins(
                                                   fontWeight: FontWeight.w600),
                                             );
                                           },
@@ -1447,68 +1575,91 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                                 DataCell(
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
+                                        horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF10B981)
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(6),
+                                      color: const Color(0xFFD1FAE5),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      "₹${transaction.amount?.toStringAsFixed(0) ?? '0'}",
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF10B981),
+                                      currencyFormatter.format(transaction.amount ?? 0),
+                                      style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF059669),
+                                        fontSize: 13,
                                       ),
                                     ),
                                   ),
                                 ),
-                                if (kIsWeb) ...[
-                                  DataCell(
-                                    Text(
-                                      DateFormat("dd MMM yyyy")
-                                          .format(transaction.createdDate!),
-                                      style: TextStyle(
-                                          color: Colors.grey.shade600),
-                                    ),
+                                DataCell(
+                                  Text(
+                                    transaction.createdDate != null
+                                        ? DateFormat("dd MMM yyyy")
+                                            .format(transaction.createdDate!)
+                                        : 'N/A',
+                                    style: GoogleFonts.poppins(
+                                        color: Colors.grey.shade600, fontSize: 12),
                                   ),
-                                  DataCell(
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFEF4444)
-                                            .withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: IconButton(
-                                        icon: const Icon(
-                                          Icons.delete_outline,
-                                          color: Color(0xFFEF4444),
-                                          size: 18,
+                                ),
+                                DataCell(
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (isAdmin)
+                                        Container(
+                                          margin: const EdgeInsets.only(right: 6),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFEFF6FF),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: IconButton(
+                                            icon: const Icon(
+                                              Icons.edit_outlined,
+                                              color: Color(0xFF2563EB),
+                                              size: 18,
+                                            ),
+                                            onPressed: () {
+                                              _showEditTransactionDialog(context, transaction);
+                                            },
+                                          ),
                                         ),
-                                        onPressed: () async {
-                                          bool delete = await addDialog(
-                                            context,
-                                            "Are you sure you want to delete this transaction?",
-                                          );
-                                          if (delete) {
-                                            deleteUser(
-                                              eventId:
-                                                  widget.eventModel.eventId ??
-                                                      "",
-                                              transId: transaction.id ?? "",
-                                            );
-                                            if (context.mounted) {
-                                              showSnackBarMsg(
+                                      if (isAdmin)
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFEE2E2),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: IconButton(
+                                            icon: const Icon(
+                                              Icons.delete_outline_rounded,
+                                              color: Color(0xFFDC2626),
+                                              size: 18,
+                                            ),
+                                            onPressed: () async {
+                                              bool delete = await addDialog(
                                                 context,
-                                                "Transaction deleted successfully",
-                                                Colors.green,
+                                                "Are you sure you want to delete this transaction?",
                                               );
-                                            }
-                                          }
-                                        },
-                                      ),
-                                    ),
+                                              if (delete) {
+                                                await deleteUser(
+                                                  eventId:
+                                                      widget.eventModel.eventId ??
+                                                          "",
+                                                  transId: transaction.id ?? "",
+                                                );
+                                                if (context.mounted) {
+                                                  showSnackBarMsg(
+                                                    context,
+                                                    "Transaction deleted successfully",
+                                                    Colors.green,
+                                                  );
+                                                }
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ],
                             );
                           }),
@@ -1520,29 +1671,29 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
               },
               error: (Object error, StackTrace stackTrace) {
                 return Container(
-                  padding: const EdgeInsets.all(40),
+                  padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   child: Column(
                     children: [
-                      Icon(Icons.error_outline,
+                      Icon(Icons.error_outline_rounded,
                           color: Colors.red.shade400, size: 48),
                       const SizedBox(height: 16),
                       Text(
                         "Error loading transactions",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                           color: Colors.red.shade700,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         error.toString(),
-                        style: TextStyle(
-                          fontSize: 14,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
                           color: Colors.red.shade600,
                         ),
                         textAlign: TextAlign.center,
@@ -1552,15 +1703,15 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
                 );
               },
               loading: () => Container(
-                height: 200,
+                height: 180,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: const Center(
                   child: CircularProgressIndicator(
                     valueColor:
-                        AlwaysStoppedAnimation<Color>(Color(0xFF667EEA)),
+                        AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
                   ),
                 ),
               ),
@@ -1569,14 +1720,99 @@ class _EventTransactionsState extends ConsumerState<EventTransactionsScreen>
     );
   }
 
-  void deleteUser({required String eventId, required String transId}) {
+  void _showEditTransactionDialog(BuildContext context, EventTransactionModel transaction) {
+    final amountCtrl = TextEditingController(
+        text: transaction.amount != null ? transaction.amount!.toStringAsFixed(0) : '');
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            "Edit Income Contribution",
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildFormField(
+                label: "Amount (₹)",
+                controller: amountCtrl,
+                hintText: "Enter amount",
+                icon: Icons.payments_rounded,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                "Cancel",
+                style: GoogleFonts.poppins(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4F46E5),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              ),
+              onPressed: () async {
+                if (amountCtrl.text.trim().isEmpty) {
+                  return showSnackBarMsg(context, "Please enter amount", Colors.red);
+                }
+                double? newAmount = double.tryParse(amountCtrl.text.trim());
+                if (newAmount == null || newAmount <= 0) {
+                  return showSnackBarMsg(context, "Please enter a valid amount", Colors.red);
+                }
+                try {
+                  await FirebaseFirestore.instance
+                      .collection("events")
+                      .doc(widget.eventModel.eventId)
+                      .collection("Transactions")
+                      .doc(transaction.id)
+                      .update({
+                    "amount": newAmount,
+                  });
+                  await syncEventTotals(widget.eventModel.eventId!);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (context.mounted) {
+                    showSnackBarMsg(context, "Transaction updated successfully", Colors.green);
+                  }
+                } catch (e) {
+                  debugPrint(e.toString());
+                }
+              },
+              child: Text(
+                "Update",
+                style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> deleteUser({required String eventId, required String transId}) async {
     try {
-      FirebaseFirestore.instance
+      await FirebaseFirestore.instance
           .collection("events")
           .doc(eventId)
           .collection("Transactions")
           .doc(transId)
           .update({"delete": true});
+      await syncEventTotals(eventId);
     } catch (e) {
       debugPrint(e.toString());
     }

@@ -1,4 +1,3 @@
-import 'package:animate_do/animate_do.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -45,7 +44,6 @@ class KuriHomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  // Optional: Profile or notification icon
                 ],
               ),
             ),
@@ -55,88 +53,86 @@ class KuriHomeScreen extends StatelessWidget {
             // Finance Dashboard Card
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: FadeInDown(
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AccountsScreen()),
-                    );
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF1E293B), Color(0xFF0F172A)], // Slate 800-900
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AccountsScreen()),
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1E293B), Color(0xFF0F172A)], // Slate 800-900
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
                       ),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              "Financial\nOverview",
+                            child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            "Financial\nOverview",
+                            style: GoogleFonts.outfit(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              height: 1.2
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.indigoAccent,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              "View All",
                               style: GoogleFonts.outfit(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
                                 color: Colors.white,
-                                height: 1.2
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.indigoAccent,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                "View All",
-                                style: GoogleFonts.outfit(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            "Income & Expense",
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              color: Colors.white70,
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              "Income & Expense",
-                              style: GoogleFonts.outfit(
-                                fontSize: 14,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
-                        )
-                      ],
-                    ),
+                          ),
+                        ],
+                      )
+                    ],
                   ),
                 ),
               ),
@@ -205,85 +201,82 @@ class KuriHomeScreen extends StatelessWidget {
                       final groupData = groups[index].data() as Map<String, dynamic>;
                       final group = KuriGroup.fromJson({...groupData, 'id': groups[index].id});
 
-                      return FadeInUp(
-                        duration: Duration(milliseconds: 400 + (index * 100)),
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => GroupDetailScreen(groupId: groups[index].id),
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GroupDetailScreen(groupId: groups[index].id),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.shade200,
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
                               ),
-                            );
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.shade200,
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 5),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        group.name,
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.purple.shade50,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        "Month ${group.currentMonth}/${group.totalMembers}",
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.purple,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    _buildGroupStat("Prize Pool", "₹${group.totalAmount.toInt()}", Icons.emoji_events_outlined, Colors.amber),
+                                    const SizedBox(width: 24),
+                                    _buildGroupStat("Members", "${group.memberIds.length}", Icons.people_outline, Colors.blue),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                
+                                // Progress Bar
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: LinearProgressIndicator(
+                                    value: group.currentMonth / (group.totalMembers > 0 ? group.totalMembers : 1),
+                                    minHeight: 6,
+                                    backgroundColor: Colors.grey.shade100,
+                                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6C63FF)),
+                                  ),
                                 ),
                               ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          group.name,
-                                          style: GoogleFonts.outfit(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.purple.shade50,
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: Text(
-                                          "Month ${group.currentMonth}/${group.totalMembers}",
-                                          style: GoogleFonts.outfit(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.purple,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      _buildGroupStat("Prize Pool", "₹${group.totalAmount.toInt()}", Icons.emoji_events_outlined, Colors.amber),
-                                      const SizedBox(width: 24),
-                                      _buildGroupStat("Members", "${group.memberIds.length}", Icons.people_outline, Colors.blue),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  
-                                  // Progress Bar
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: LinearProgressIndicator(
-                                      value: group.currentMonth / (group.totalMembers > 0 ? group.totalMembers : 1),
-                                      minHeight: 6,
-                                      backgroundColor: Colors.grey.shade100,
-                                      valueColor: AlwaysStoppedAnimation<Color>(const Color(0xFF6C63FF)),
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ),
                           ),
                         ),

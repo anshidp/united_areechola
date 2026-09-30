@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -6,12 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:lottie/lottie.dart';
 import 'package:united_areechola/Models/eventmodel.dart';
 import 'package:united_areechola/authentication/screens/splash_screen.dart';
 import 'package:united_areechola/constants.dart';
 import 'package:united_areechola/events/repository/repository.dart';
 import 'package:united_areechola/events/screens/event_transactions.dart';
+
+final searchQueryProvider = StateProvider<String>((ref) => '');
+final selectedFilterProvider = StateProvider<String>((ref) => 'All');
 
 class AddEventsScreen extends ConsumerStatefulWidget {
   const AddEventsScreen({super.key});
@@ -20,570 +21,807 @@ class AddEventsScreen extends ConsumerStatefulWidget {
   ConsumerState<AddEventsScreen> createState() => _AddEventsState();
 }
 
-class _AddEventsState extends ConsumerState<AddEventsScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _slideAnimation;
-  late Animation<double> _fadeAnimation;
-
+class _AddEventsState extends ConsumerState<AddEventsScreen> {
   final addeventbool = StateProvider<bool>((ref) => false);
   final eventnameController = TextEditingController();
   final targetamountController = TextEditingController();
   final discriptionController = TextEditingController();
+  final searchController = TextEditingController();
 
-  update() async {
-    final data = await FirebaseFirestore.instance.collection("users").get();
-    if (data.docs.isNotEmpty) {
-      for (var i in data.docs) {
-        await FirebaseFirestore.instance
-            .collection("users")
-            .doc(i.id)
-            .update({"id": i.id});
-      }
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _slideAnimation = Tween<double>(begin: -1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _animationController.forward();
-  }
+  final currencyFormatter = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
 
   @override
   void dispose() {
-    _animationController.dispose();
     eventnameController.dispose();
     targetamountController.dispose();
     discriptionController.dispose();
+    searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     var addevent = ref.watch(addeventbool);
-    double scrWidth = MediaQuery.of(context).size.width;
-    double scrHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          return Transform.translate(
-            offset: Offset(_slideAnimation.value * scrWidth, 0),
-            child: Opacity(
-              opacity: _fadeAnimation.value,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(
-                  horizontal: scrWidth > 600 ? 40 : 20,
-                  vertical: 24,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(
-                      height: 30,
-                    ),
-                    _buildHeader(scrWidth, scrHeight, addevent),
-                    if (addevent) ...[
-                      const SizedBox(height: 24),
-                      _buildEventForm(),
-                    ],
-                    const SizedBox(height: 32),
-                    _buildEventsGrid(scrWidth),
-                    const SizedBox(height: 24),
-                    _buildFooter(),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
+      backgroundColor: Colors.grey.shade50,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
 
-  Widget _buildHeader(double scrWidth, double scrHeight, bool addevent) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF667EEA).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Event Management",
-                  style: GoogleFonts.poppins(
-                    fontSize: scrWidth > 600 ? 32 : 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Create and manage your events efficiently",
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.9),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
+            // Finance Dashboard Card (Kuri Style)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _buildKuriDashboardCard(),
             ),
-          ),
-          if (!addevent && isAdmin) _buildAddEventButton(),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildAddEventButton() {
-    return Consumer(
-      builder: (context, ref, child) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () {
-                ref.read(addeventbool.notifier).state = true;
-              },
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            const SizedBox(height: 20),
+
+            // Form toggle or Search Bar
+            if (addevent)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: _buildEventForm(),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.add_circle_outline,
-                        color: Colors.white, size: 20),
-                    const SizedBox(width: 8),
                     Text(
-                      "Add Event",
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
+                      "All Events",
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        color: Colors.black87,
                       ),
                     ),
                   ],
                 ),
               ),
+
+            const SizedBox(height: 14),
+
+            // Events List
+            Expanded(
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final eventdata = ref.watch(eventsdatastream);
+
+                  return eventdata.when(
+                    data: (events) {
+                      if (events.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.event_outlined, size: 60, color: Colors.grey.shade300),
+                              const SizedBox(height: 16),
+                              Text(
+                                "No Active Events",
+                                style: GoogleFonts.outfit(
+                                  fontSize: 18,
+                                  color: Colors.grey.shade400,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 60),
+                        itemCount: events.length,
+                        separatorBuilder: (c, i) => const SizedBox(height: 18),
+                        itemBuilder: (context, index) {
+                          final data = events[index];
+                          final createdDate = data.createdDate != null
+                              ? DateFormat("dd MMM yyyy").format(data.createdDate!)
+                              : 'N/A';
+                          double target = data.targetamount ?? 0;
+                          double income = data.income ?? 0;
+                          double expense = data.expense ?? 0;
+                          double balance = income - expense;
+                          double progress = target > 0 ? (income / target) : 0.0;
+
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (ctx) => EventTransactionsScreen(
+                                    eventModel: data,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(22),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.shade200,
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(22),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Top Header: Full Event Name + Date + Admin Menu (Edit & Delete)
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                (data.eventname ?? '').toUpperCase(),
+                                                style: GoogleFonts.outfit(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.black87,
+                                                  height: 1.25,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.purple.shade50,
+                                                  borderRadius: BorderRadius.circular(10),
+                                                ),
+                                                child: Text(
+                                                  createdDate,
+                                                  style: GoogleFonts.outfit(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.purple,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (isAdmin)
+                                          PopupMenuButton<int>(
+                                            color: Colors.white,
+                                            surfaceTintColor: Colors.white,
+                                            icon: Icon(Icons.more_vert_rounded, color: Colors.grey.shade400, size: 20),
+                                            onSelected: (val) async {
+                                              if (val == 1) {
+                                                _showEditEventDialog(context, data);
+                                              } else if (val == 2) {
+                                                bool delete = await addDialog(
+                                                  context,
+                                                  "Do you want to delete this event?",
+                                                );
+                                                if (delete) {
+                                                  deleteEvent(data.eventId ?? "", context);
+                                                }
+                                              }
+                                            },
+                                            itemBuilder: (context) => [
+                                              PopupMenuItem(
+                                                value: 1,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.edit_outlined, color: Colors.blue.shade600, size: 18),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      "Edit",
+                                                      style: GoogleFonts.outfit(color: Colors.blue.shade600, fontSize: 14),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              PopupMenuItem(
+                                                value: 2,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.delete_outline_rounded, color: Colors.red.shade400, size: 18),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      "Delete",
+                                                      style: GoogleFonts.outfit(color: Colors.red.shade400, fontSize: 14),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                      ],
+                                    ),
+                                    if ((data.discription ?? '').isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        data.discription!,
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 13,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 18),
+                                    
+                                    // Spacious 2x2 Grid for 4 Event Financial Metrics: Target, Income, Expense, Balance
+                                    Column(
+                                      children: [
+                                        Row(
+                                          children: [
+                                            _buildGroupStat("Target", currencyFormatter.format(target), Icons.emoji_events_outlined, Colors.amber),
+                                            const SizedBox(width: 16),
+                                            _buildGroupStat("Income", currencyFormatter.format(income), Icons.trending_up_rounded, Colors.green),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 14),
+                                        Row(
+                                          children: [
+                                            _buildGroupStat("Expense", currencyFormatter.format(expense), Icons.trending_down_rounded, Colors.red),
+                                            const SizedBox(width: 16),
+                                            _buildGroupStat("Balance", currencyFormatter.format(balance), Icons.account_balance_wallet_outlined, Colors.indigo),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+
+                                    if (target > 0) ...[
+                                      const SizedBox(height: 16),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            "Progress Goal",
+                                            style: GoogleFonts.outfit(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: (progress >= 1.0)
+                                                  ? Colors.green.shade50
+                                                  : const Color(0xFF6C63FF).withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              "${(progress * 100).toStringAsFixed(1)}%",
+                                              style: GoogleFonts.outfit(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                                color: (progress >= 1.0)
+                                                    ? Colors.green.shade700
+                                                    : const Color(0xFF6C63FF),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: LinearProgressIndicator(
+                                          value: progress.clamp(0.0, 1.0),
+                                          minHeight: 8,
+                                          backgroundColor: Colors.grey.shade100,
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            income >= target ? Colors.green : const Color(0xFF6C63FF),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(color: Colors.black),
+                    ),
+                    error: (err, st) => Center(
+                      child: Text("Error: $err", style: GoogleFonts.outfit(color: Colors.red)),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditEventDialog(BuildContext context, EventModel data) {
+    final nameCtrl = TextEditingController(text: data.eventname ?? '');
+    final targetCtrl = TextEditingController(
+        text: data.targetamount != null && data.targetamount! > 0
+            ? data.targetamount!.toStringAsFixed(0)
+            : '');
+    final descCtrl = TextEditingController(text: data.discription ?? '');
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            "Edit Event",
+            style: GoogleFonts.outfit(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
             ),
           ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildKuriTextField("Event Name", nameCtrl, "Enter event title"),
+                const SizedBox(height: 12),
+                _buildKuriTextField(
+                    "Target Amount (₹)", targetCtrl, "Enter target amount",
+                    isNumber: true),
+                const SizedBox(height: 12),
+                _buildKuriTextField(
+                    "Description", descCtrl, "Enter description",
+                    maxLines: 2),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                "Cancel",
+                style: GoogleFonts.outfit(
+                    color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              ),
+              onPressed: () async {
+                if (nameCtrl.text.trim().isEmpty) {
+                  return showSnackBar(context, "Please enter event name");
+                }
+                try {
+                  await FirebaseFirestore.instance
+                      .collection("events")
+                      .doc(data.eventId)
+                      .update({
+                    "eventname": nameCtrl.text.trim(),
+                    "targetamount":
+                        double.tryParse(targetCtrl.text.trim()) ?? 0,
+                    "discription": descCtrl.text.trim(),
+                  });
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                  }
+                  if (context.mounted) {
+                    showSnackBar(context, "Event updated successfully");
+                  }
+                } catch (e) {
+                  debugPrint(e.toString());
+                }
+              },
+              child: Text(
+                "Update",
+                style: GoogleFonts.outfit(
+                    color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
         );
       },
     );
   }
 
-  Widget _buildEventForm() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+  Widget _buildKuriDashboardCard() {
+    final eventdata = ref.watch(eventsdatastream);
+
+    return eventdata.when(
+      data: (events) {
+        double totalTarget = 0;
+        double totalIncome = 0;
+        double totalExpense = 0;
+
+        for (var e in events) {
+          totalTarget += (e.targetamount ?? 0);
+          totalIncome += (e.income ?? 0);
+          totalExpense += (e.expense ?? 0);
+        }
+
+        double totalBalance = totalIncome - totalExpense;
+        bool isFormOpen = ref.watch(addeventbool);
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1E293B), Color(0xFF0F172A)], // Kuri Slate 800-900
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Top Row: Icon + Title + Add Event Button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.event_note_rounded, color: Colors.white, size: 22),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Events Overview",
+                                style: GoogleFonts.outfit(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                "${events.length} active events",
+                                style: GoogleFonts.outfit(
+                                  fontSize: 12,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isAdmin)
+                    GestureDetector(
+                      onTap: () {
+                        ref.read(addeventbool.notifier).state = !isFormOpen;
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: Colors.indigoAccent,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.indigoAccent.withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isFormOpen ? Icons.close_rounded : Icons.add_circle_outline_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isFormOpen ? "Close" : "Add Event",
+                              style: GoogleFonts.outfit(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              // Goal Pill Tag
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF667EEA).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white.withOpacity(0.18)),
                 ),
-                child: const Icon(
-                  Icons.event_note,
-                  color: Color(0xFF667EEA),
-                  size: 24,
+                child: Text(
+                  "Total Goal Target: ${currencyFormatter.format(totalTarget)}",
+                  style: GoogleFonts.outfit(
+                    color: Colors.amberAccent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Text(
-                "Create New Event",
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
-                ),
+              const SizedBox(height: 16),
+              Container(
+                height: 1,
+                color: Colors.white.withOpacity(0.1),
+              ),
+              const SizedBox(height: 14),
+              // 3 Finance Metrics Row: Total Income, Total Expense, Net Balance
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildKuriDashboardMetric(
+                    "Total Income",
+                    currencyFormatter.format(totalIncome),
+                    Icons.arrow_upward_rounded,
+                    Colors.greenAccent,
+                  ),
+                  Container(width: 1, height: 28, color: Colors.white.withOpacity(0.1)),
+                  _buildKuriDashboardMetric(
+                    "Total Expense",
+                    currencyFormatter.format(totalExpense),
+                    Icons.arrow_downward_rounded,
+                    const Color(0xFFF87171),
+                  ),
+                  Container(width: 1, height: 28, color: Colors.white.withOpacity(0.1)),
+                  _buildKuriDashboardMetric(
+                    "Net Balance",
+                    currencyFormatter.format(totalBalance),
+                    Icons.account_balance_wallet_rounded,
+                    Colors.cyanAccent,
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          _buildFormField(
-            label: "Event Name",
-            controller: eventnameController,
-            hintText: "Enter event name",
-            icon: Icons.title,
-          ),
-          const SizedBox(height: 20),
-          _buildFormField(
-            label: "Target Amount",
-            controller: targetamountController,
-            hintText: "Enter target amount",
-            icon: Icons.monetization_on,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          ),
-          const SizedBox(height: 20),
-          _buildFormField(
-            label: "Description",
-            controller: discriptionController,
-            hintText: "Enter event description",
-            icon: Icons.description,
-            maxLines: 3,
-          ),
-          const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              _buildActionButton(
-                title: 'Cancel',
-                onTap: () {
-                  ref.read(addeventbool.notifier).state = false;
-                  _clearForm();
-                },
-                isSecondary: true,
-              ),
-              const SizedBox(width: 16),
-              _buildActionButton(
-                title: 'Add Event',
-                onTap: () async {
-                  if (eventnameController.text.isEmpty) {
-                    return showSnackBar(context, "Please enter the event name");
-                  }
-
-                  bool confirm = await addDialog(
-                      context, "Do you want to add this event?");
-
-                  if (confirm) {
-                    EventModel eventModel = EventModel(
-                      delete: false,
-                      discription: discriptionController.text,
-                      targetamount:
-                          double.tryParse(targetamountController.text),
-                      balance: 0,
-                      income: 0,
-                      createdDate: DateTime.now(),
-                      eventname: eventnameController.text,
-                      users: [],
-                      expense: 0,
-                    );
-                    ref.read(eventrepositoryProvider).addEvents(eventModel);
-                    _clearForm();
-                  }
-                  ref.read(addeventbool.notifier).state = false;
-                },
-              ),
-            ],
-          ),
-        ],
+        );
+      },
+      loading: () => Container(
+        height: 140,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(24),
+        ),
       ),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 
-  Widget _buildFormField({
-    required String label,
-    required TextEditingController controller,
-    required String hintText,
-    required IconData icon,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    int maxLines = 1,
-  }) {
+  Widget _buildKuriDashboardMetric(String label, String value, IconData icon, Color color) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade700,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: GoogleFonts.outfit(
+                fontSize: 11,
+                color: Colors.white70,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          maxLines: maxLines,
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey.shade400,
-            ),
-            prefixIcon: Icon(icon, color: const Color(0xFF667EEA), size: 20),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF667EEA), width: 2),
-            ),
-            filled: true,
-            fillColor: Colors.grey.shade50,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: GoogleFonts.outfit(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildActionButton({
-    required String title,
-    required VoidCallback onTap,
-    bool isSecondary = false,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: isSecondary
-            ? null
-            : const LinearGradient(
-                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-              ),
-        borderRadius: BorderRadius.circular(12),
-        border: isSecondary ? Border.all(color: Colors.grey.shade300) : null,
-      ),
-      child: Material(
-        color: isSecondary ? Colors.white : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            child: Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                color: isSecondary ? Colors.grey.shade700 : Colors.white,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEventsGrid(double scrWidth) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final eventdata = ref.watch(eventsdatastream);
-
-        return eventdata.when(
-          data: (events) {
-            if (events.isEmpty) {
-              return Container(
-                padding: const EdgeInsets.all(40),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  children: [
-                    LottieBuilder.asset(
-                      "assets/Animation - 1717412302389.json",
-                      height: 200,
-                    ),
-                    Text(
-                      "No Events Yet",
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Create your first event to get started",
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                int crossAxisCount;
-                if (constraints.maxWidth < 600) {
-                  crossAxisCount = 1;
-                } else if (constraints.maxWidth < 1200) {
-                  crossAxisCount = 2;
-                } else {
-                  crossAxisCount = 3;
-                }
-
-                return GridView.builder(
-                  padding: EdgeInsets.zero,
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: events.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    childAspectRatio: kIsWeb ? 1.1 : 1.3,
-                    crossAxisSpacing: 20,
-                    mainAxisSpacing: 20,
-                    crossAxisCount: crossAxisCount,
-                  ),
-                  itemBuilder: (context, index) {
-                    final data = events[index];
-                    final createdDate =
-                        DateFormat("dd-MM-yyyy").format(data.createdDate!);
-                    double value = 0;
-                    double target = data.targetamount ?? 0;
-                    if (target > 0) {
-                      value = (data.income ?? 0) / target;
-                    }
-
-                    return ModernEventTile(
-                      eventId: data.eventId ?? "",
-                      value: value,
-                      targetAmount: data.targetamount ?? 0,
-                      eventName: data.eventname ?? "",
-                      eventDescription: data.discription ?? "",
-                      income: data.income ?? 0,
-                      expense: data.expense ?? 0,
-                      createdDate: createdDate,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (ctx) => EventTransactionsScreen(
-                              eventModel: data,
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                );
-              },
-            );
-          },
-          error: (Object error, StackTrace stackTrace) {
-            return Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  Icon(Icons.error_outline,
-                      color: Colors.red.shade400, size: 48),
-                  const SizedBox(height: 16),
-                  Text(
-                    "Error loading events",
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red.shade700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    error.toString(),
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.red.shade600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            );
-          },
-          loading: () => Container(
-            height: 200,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF667EEA)),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildFooter() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
+  Widget _buildGroupStat(String label, String value, IconData icon, Color color) {
+    return Expanded(
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Icon(Icons.info_outline, size: 16, color: Colors.grey.shade500),
-          const SizedBox(width: 8),
-          Text(
-            "Version 2.7",
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey.shade500,
-              fontWeight: FontWeight.w500,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: GoogleFonts.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  label,
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildEventForm() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Create New Event",
+            style: GoogleFonts.outfit(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildKuriTextField("Event Name", eventnameController, "Enter event title"),
+          const SizedBox(height: 12),
+          _buildKuriTextField("Target Amount", targetamountController, "Enter target amount (₹)", isNumber: true),
+          const SizedBox(height: 12),
+          _buildKuriTextField("Description", discriptionController, "Enter description (optional)", maxLines: 2),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () {
+                  ref.read(addeventbool.notifier).state = false;
+                  _clearForm();
+                },
+                child: Text(
+                  "Cancel",
+                  style: GoogleFonts.outfit(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+                onPressed: () async {
+                  if (eventnameController.text.trim().isEmpty) {
+                    return showSnackBar(context, "Please enter event name");
+                  }
+                  bool confirm = await addDialog(context, "Do you want to add this event?");
+                  if (confirm) {
+                    EventModel eventModel = EventModel(
+                      delete: false,
+                      discription: discriptionController.text.trim(),
+                      targetamount: double.tryParse(targetamountController.text.trim()),
+                      balance: 0,
+                      income: 0,
+                      createdDate: DateTime.now(),
+                      eventname: eventnameController.text.trim(),
+                      users: [],
+                      expense: 0,
+                    );
+                    ref.read(eventrepositoryProvider).addEvents(eventModel);
+                    _clearForm();
+                    ref.read(addeventbool.notifier).state = false;
+                  }
+                },
+                child: Text(
+                  "Create Event",
+                  style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKuriTextField(String label, TextEditingController controller, String hint, {bool isNumber = false, int maxLines = 1}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          inputFormatters: isNumber ? [FilteringTextInputFormatter.digitsOnly] : null,
+          maxLines: maxLines,
+          style: GoogleFonts.outfit(fontSize: 14),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.outfit(fontSize: 13, color: Colors.grey.shade400),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.black, width: 1.5),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -591,237 +829,6 @@ class _AddEventsState extends ConsumerState<AddEventsScreen>
     eventnameController.clear();
     targetamountController.clear();
     discriptionController.clear();
-  }
-}
-
-class ModernEventTile extends StatelessWidget {
-  final String eventName;
-  final String eventDescription;
-  final double income;
-  final double expense;
-  final double targetAmount;
-  final String createdDate;
-  final String eventId;
-  final double value;
-  final VoidCallback onTap;
-
-  const ModernEventTile({
-    super.key,
-    required this.eventName,
-    required this.eventDescription,
-    required this.income,
-    required this.expense,
-    required this.eventId,
-    required this.value,
-    required this.targetAmount,
-    required this.createdDate,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(context),
-                const SizedBox(height: 16),
-                _buildEventName(),
-                const SizedBox(height: 12),
-                _buildFinancialInfo(),
-                const Spacer(),
-                _buildProgressSection(),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0xFF667EEA).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            createdDate,
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF667EEA),
-            ),
-          ),
-        ),
-        if (isAdmin)
-          PopupMenuButton<int>(
-            color: Colors.white,
-            surfaceTintColor: Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            icon: Icon(
-              Icons.more_vert,
-              color: Colors.grey.shade600,
-              size: 20,
-            ),
-            onSelected: (value) async {
-              if (value == 1) {
-                bool delete = await addDialog(
-                  context,
-                  "Do you want to delete this event?",
-                );
-                if (delete) {
-                  deleteEvent(eventId, context);
-                }
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 1,
-                child: Row(
-                  children: [
-                    Icon(Icons.delete_outline,
-                        color: Colors.red.shade400, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Delete",
-                      style: GoogleFonts.poppins(
-                        color: Colors.red.shade400,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-      ],
-    );
-  }
-
-  Widget _buildEventName() {
-    return Text(
-      eventName.toUpperCase(),
-      style: GoogleFonts.poppins(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: Colors.grey.shade800,
-      ),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  Widget _buildFinancialInfo() {
-    return Column(
-      children: [
-        _buildInfoRow("Target", "₹${targetAmount.toStringAsFixed(0)}",
-            Colors.blue.shade600),
-        const SizedBox(height: 8),
-        _buildInfoRow(
-            "Income", "₹${income.toStringAsFixed(0)}", Colors.green.shade600),
-        const SizedBox(height: 8),
-        _buildInfoRow(
-            "Expense", "₹${expense.toStringAsFixed(0)}", Colors.red.shade600),
-      ],
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value, Color valueColor) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey.shade600,
-          ),
-        ),
-        Text(
-          value,
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: valueColor,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProgressSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "Progress",
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            Text(
-              "${(value * 100).toStringAsFixed(1)}%",
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF667EEA),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Container(
-          height: 6,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(3),
-          ),
-          child: FractionallySizedBox(
-            widthFactor: value.clamp(0.0, 1.0),
-            alignment: Alignment.centerLeft,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                ),
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
   }
 }
 

@@ -1,6 +1,6 @@
 import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:united_areechola/Models/event_expense_model.dart';
 import 'package:united_areechola/Models/event_transaction_model.dart';
@@ -38,13 +38,61 @@ final eventExpenseStream =
     StreamProvider.family<List<EventExpenseModel>, String>((ref, eventId) =>
         ref.read(eventrepositoryProvider).getEventExpenses(eventId: eventId));
 
+Future<void> syncEventTotals(String eventId) async {
+  if (eventId.isEmpty) return;
+  try {
+    // 1. Total income = sum of Transactions.amount where delete != true
+    final transSnap = await FirebaseFirestore.instance
+        .collection("events")
+        .doc(eventId)
+        .collection("Transactions")
+        .get();
+
+    double totalIncome = 0;
+    for (var doc in transSnap.docs) {
+      final data = doc.data();
+      if (data["delete"] == true) continue;
+      final rawAmount = data["amount"];
+      if (rawAmount != null) {
+        totalIncome += (rawAmount as num).toDouble();
+      }
+    }
+
+    // 2. Total expense = sum of expense.expenseAmount where delete != true
+    final expSnap = await FirebaseFirestore.instance
+        .collection("events")
+        .doc(eventId)
+        .collection("expense")
+        .get();
+
+    double totalExpense = 0;
+    for (var doc in expSnap.docs) {
+      final data = doc.data();
+      if (data["delete"] == true) continue;
+      final rawExp = data["expenseAmount"];
+      if (rawExp != null) {
+        totalExpense += (rawExp as num).toDouble();
+      }
+    }
+
+    // 3. Update event document with exact sums
+    await FirebaseFirestore.instance.collection("events").doc(eventId).update({
+      "totalIncome": totalIncome,
+      "totalexpense": totalExpense,
+      "balance": totalIncome - totalExpense,
+    });
+  } catch (e) {
+    debugPrint("Error syncing event totals: $e");
+  }
+}
+
 class EventRepository implements EventsRepositories {
   @override
   Future<void> addEvents(EventModel eventModel) async {
     try {
       final doc = FirebaseFirestore.instance.collection("events").doc();
       eventModel.eventId = doc.id;
-      doc.set(eventModel.toMap());
+      await doc.set(eventModel.toMap());
     } on Exception catch (e) {
       throw Exception(e.toString());
     }
@@ -78,7 +126,7 @@ class EventRepository implements EventsRepositories {
               .map((e) => EventTransactionModel.fromMap(e.data()))
               .toList());
     } catch (e) {
-      print(e);
+      debugPrint(e.toString());
     }
     throw UnimplementedError();
   }
@@ -95,7 +143,7 @@ class EventRepository implements EventsRepositories {
               .map((e) => EventExpenseModel.fromMap(e.data()))
               .toList());
     } catch (e) {
-      print(e);
+      debugPrint(e.toString());
     }
     throw UnimplementedError();
   }
@@ -111,16 +159,19 @@ class EventRepository implements EventsRepositories {
           .collection("Transactions")
           .doc();
       eventTransactionModel.id = doc.id;
-      doc.set(eventTransactionModel.toMap());
-      await FirebaseFirestore.instance
-          .collection("events")
-          .doc(eventId)
-          .update({
-        "users": FieldValue.arrayUnion([eventTransactionModel.userId]),
-        "totalIncome": FieldValue.increment(eventTransactionModel.amount ?? 0),
-      });
+      await doc.set(eventTransactionModel.toMap());
+      if (eventTransactionModel.userId != null &&
+          eventTransactionModel.userId!.isNotEmpty) {
+        await FirebaseFirestore.instance
+            .collection("events")
+            .doc(eventId)
+            .update({
+          "users": FieldValue.arrayUnion([eventTransactionModel.userId]),
+        });
+      }
+      await syncEventTotals(eventId);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
     }
   }
 
@@ -135,15 +186,10 @@ class EventRepository implements EventsRepositories {
           .collection("expense")
           .doc();
       eventExpenseModel.id = doc.id;
-      doc.set(eventExpenseModel.toMap());
-      await FirebaseFirestore.instance
-          .collection("events")
-          .doc(eventId)
-          .update({
-        "totalexpense": FieldValue.increment(eventExpenseModel.amount ?? 0),
-      });
+      await doc.set(eventExpenseModel.toMap());
+      await syncEventTotals(eventId);
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
     }
   }
 }

@@ -21,8 +21,7 @@ class AddSubcription extends ConsumerStatefulWidget {
   ConsumerState<AddSubcription> createState() => _AddSubcriptionState();
 }
 
-class _AddSubcriptionState extends ConsumerState<AddSubcription>
-    with TickerProviderStateMixin {
+class _AddSubcriptionState extends ConsumerState<AddSubcription> {
   DateTime? subcriptionStartDate;
   final amountController = TextEditingController();
   String selectedMonth = DateFormat('yyyy-MM').format(DateTime.now());
@@ -32,10 +31,6 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
   bool isBulk = false;
   DateTime? bulkStartDate;
   DateTime? bulkEndDate;
-
-  late AnimationController _animationController;
-  late Animation<double> _slideAnimation;
-  // late Animation<double> _fadeAnimation;
 
   List<User> userslist = [];
   Map<String, dynamic> users = {};
@@ -50,29 +45,13 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
   Map<String, double> subcriptionamount = {};
 
   @override
-  @override
   void initState() {
     super.initState();
-
-    if (!kIsWeb) {
-      // 🎨 Mobile only animation
-      _animationController = AnimationController(
-        duration: const Duration(milliseconds: 1000),
-        vsync: this,
-      );
-
-      _animationController.forward();
-    }
-
-    // 🚀 Data loading (safe on all platforms)
     getUsers();
   }
 
   @override
   void dispose() {
-    if (!kIsWeb) {
-      _animationController.dispose();
-    }
     super.dispose();
   }
 
@@ -139,104 +118,50 @@ class _AddSubcriptionState extends ConsumerState<AddSubcription>
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: kIsWeb
-          // 🚀 WEB VERSION (NO ANIMATION, FAST)
-          ? SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 30),
+            _buildPageHeader(),
+            const SizedBox(height: 14),
+            if (isAdmin)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  const SizedBox(height: 30),
-                  _buildPageHeader(),
-                  const SizedBox(height: 14),
-                  if (isAdmin)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        _buildActionButton(
-                          onTap: () async {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => SubscriptionReportPage(),
-                              ),
-                            );
-                          },
-                          title: 'Subscription Report',
-                          isPrimary: true,
+                  _buildActionButton(
+                    onTap: () async {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SubscriptionReportPage(),
                         ),
-                      ],
-                    ),
-                  const SizedBox(height: 14),
-                  _buildStatsSection(),
-                  const SizedBox(height: 24),
-                  _buildSubscriptionForm(addevent, isTablet),
-                  const SizedBox(height: 24),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _buildUnpaidUsersSection(size)),
-                      const SizedBox(width: 10),
-                      Expanded(child: _buildMonthSelector()),
-                    ],
+                      );
+                    },
+                    title: 'Subscription Report',
+                    isPrimary: true,
                   ),
-                  const SizedBox(height: 24),
-                  _buildTransactionsTable(),
                 ],
               ),
-            )
-
-          // 🎨 MOBILE VERSION (WITH ANIMATION)
-          : AnimatedBuilder(
-              animation: _animationController,
-              builder: (context, child) {
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 30),
-                      _buildPageHeader(),
-                      const SizedBox(height: 14),
-                      if (isAdmin)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            _buildActionButton(
-                              onTap: () async {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        SubscriptionReportPage(),
-                                  ),
-                                );
-                              },
-                              title: 'Subscription Report',
-                              isPrimary: true,
-                            ),
-                          ],
-                        ),
-                      const SizedBox(height: 14),
-                      _buildStatsSection(),
-                      const SizedBox(height: 24),
-                      _buildSubscriptionForm(addevent, isTablet),
-                      const SizedBox(height: 24),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: _buildUnpaidUsersSection(size)),
-                          const SizedBox(width: 10),
-                          Expanded(child: _buildMonthSelector()),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      _buildTransactionsTable(),
-                    ],
-                  ),
-                );
-              },
+            const SizedBox(height: 14),
+            _buildStatsSection(),
+            const SizedBox(height: 24),
+            _buildSubscriptionForm(addevent, isTablet),
+            const SizedBox(height: 24),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: _buildUnpaidUsersSection(size)),
+                const SizedBox(width: 10),
+                Expanded(child: _buildMonthSelector()),
+              ],
             ),
+            const SizedBox(height: 24),
+            _buildTransactionsTable(),
+          ],
+        ),
+      ),
     );
   }
 

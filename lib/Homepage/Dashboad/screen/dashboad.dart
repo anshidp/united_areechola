@@ -7,9 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:united_areechola/Homepage/chart/dashboard_chart.dart';
 import 'package:united_areechola/authentication/screens/login.dart';
 import 'package:united_areechola/authentication/screens/splash_screen.dart';
-import 'package:united_areechola/events/screens/addevents.dart';
 import 'package:united_areechola/kuri/screens/accounts_screen.dart';
-
 
 class Dashboard extends ConsumerStatefulWidget {
   const Dashboard({super.key});
@@ -18,12 +16,7 @@ class Dashboard extends ConsumerStatefulWidget {
   ConsumerState<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardState extends ConsumerState<Dashboard>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late AnimationController _statsAnimationController;
-  late Animation<double> _fadeAnimation;
-
+class _DashboardState extends ConsumerState<Dashboard> {
   int totalUsers = 0;
   double totalExpense = 0;
   double totalsubcriptionIncome = 0;
@@ -33,40 +26,7 @@ class _DashboardState extends ConsumerState<Dashboard>
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-    _statsAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-
-    // _slideAnimation = Tween<Offset>(
-    //   begin: const Offset(0, 0.3),
-    //   end: Offset.zero,
-    // ).animate(CurvedAnimation(
-    //   parent: _animationController,
-    //   curve: Curves.easeOutBack,
-    // ));
-
     getTotalData();
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    _statsAnimationController.dispose();
-    super.dispose();
   }
 
   getTotalData() async {
@@ -98,9 +58,8 @@ class _DashboardState extends ConsumerState<Dashboard>
           });
         }),
         FirebaseFirestore.instance
-            .collection("accounts") // Changed from events to accounts
-            .where("type", isEqualTo: "expense") // Filter for expenses
-            //.where("delete", isEqualTo: false) // Assuming accounts collection might have delete flag later
+            .collection("accounts")
+            .where("type", isEqualTo: "expense")
             .get()
             .then((value) {
           setState(() {
@@ -127,60 +86,50 @@ class _DashboardState extends ConsumerState<Dashboard>
       setState(() {
         isLoading = false;
       });
-      _statsAnimationController.forward();
     } catch (e) {
       setState(() {
         isLoading = false;
       });
-      print(e.toString());
+      debugPrint(e.toString());
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-
     double scrWidth = MediaQuery.of(context).size.width;
     double scrHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          return FadeTransition(
-            opacity: _fadeAnimation,
-            child: CustomScrollView(
-              slivers: [
-                // Custom App Bar
-                SliverToBoxAdapter(
-                  child: _buildHeader(context, size),
-                ),
+      body: CustomScrollView(
+        slivers: [
+          // Custom App Bar
+          SliverToBoxAdapter(
+            child: _buildHeader(context, size),
+          ),
 
-                // Stats Cards
-                SliverToBoxAdapter(
-                  child: _buildStatsSection(size),
-                ),
+          // Stats Cards
+          SliverToBoxAdapter(
+            child: _buildStatsSection(size),
+          ),
 
-                // Chart Section
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                      width: scrWidth,
-                      height:
-                          scrWidth > 600 ? scrHeight * 0.6 : scrHeight * 0.65,
-                      child: DashboardChart(
-                        totalEventIncome: totalsubcriptionIncome,
-                      )),
-                ),
+          // Chart Section
+          SliverToBoxAdapter(
+            child: SizedBox(
+                width: scrWidth,
+                height:
+                    scrWidth > 600 ? scrHeight * 0.6 : scrHeight * 0.65,
+                child: DashboardChart(
+                  totalEventIncome: totalsubcriptionIncome,
+                )),
+          ),
 
-                // Add some bottom padding
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 20),
-                ),
-              ],
-            ),
-          );
-        },
+          // Bottom padding
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 20),
+          ),
+        ],
       ),
     );
   }
@@ -303,7 +252,6 @@ class _DashboardState extends ConsumerState<Dashboard>
             ),
             child: IconButton(
               onPressed: () {
-                // Show logout confirmation dialog
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
@@ -399,14 +347,14 @@ class _DashboardState extends ConsumerState<Dashboard>
         'gradient': [Colors.green[400]!, Colors.green[600]!],
       },
       {
-        'title': 'Total Expense', // Changed from Total Events
-        'value': totalExpense, // Updated to use tracked expenses
-        'icon': Icons.arrow_upward_rounded, // Changed icon
-        'color': Colors.red, // Changed color
+        'title': 'Total Expense',
+        'value': totalExpense,
+        'icon': Icons.arrow_upward_rounded,
+        'color': Colors.red,
         'gradient': [Colors.red[400]!, Colors.red[600]!],
       },
       {
-        'title': 'Subscription Income', // Changed from Total Income
+        'title': 'Subscription Income',
         'value': totalsubcriptionIncome,
         'icon': Icons.card_membership_rounded,
         'color': Colors.purple,
@@ -421,33 +369,19 @@ class _DashboardState extends ConsumerState<Dashboard>
       },
     ];
 
-    return AnimatedBuilder(
-      animation: _statsAnimationController,
-      builder: (context, child) {
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: size.width > 600 ? 3 : 2,
-            childAspectRatio: size.width > 600 ? 2.1 : 1,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          itemCount: stats.length,
-          itemBuilder: (context, index) {
-            final stat = stats[index];
-            return TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: Duration(milliseconds: 900 + (index * 200)),
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: value,
-                  child: _buildStatCard(stat, index),
-                );
-              },
-            );
-          },
-        );
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: size.width > 600 ? 3 : 2,
+        childAspectRatio: size.width > 600 ? 2.1 : 1,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      itemCount: stats.length,
+      itemBuilder: (context, index) {
+        final stat = stats[index];
+        return _buildStatCard(stat, index);
       },
     );
   }
@@ -476,7 +410,7 @@ class _DashboardState extends ConsumerState<Dashboard>
           onTap: () {
             if (index == 1) {
               Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => AccountsScreen()));
+                  MaterialPageRoute(builder: (context) => const AccountsScreen()));
             }
           },
           child: Padding(
@@ -513,21 +447,13 @@ class _DashboardState extends ConsumerState<Dashboard>
                     AnimatedFlipCounter(
                         fractionDigits: index == 2 || index == 3 ? 1 : 0,
                         prefix: index == 2 || index == 3 ? "₹" : "",
-                        duration: Duration(milliseconds: 200),
+                        duration: const Duration(milliseconds: 200),
                         value: stat['value'] ?? 0,
                         textStyle: GoogleFonts.inter(
                           color: Colors.white,
                           fontSize: 25,
                           fontWeight: FontWeight.w800,
                         )),
-                    // Text(
-                    //   stat['value'] as String,
-                    //   style: GoogleFonts.inter(
-                    //     color: Colors.white,
-                    //     fontSize: 28,
-                    //     fontWeight: FontWeight.w800,
-                    //   ),
-                    // ),
                     const SizedBox(height: 4),
                     Text(
                       stat['title'] as String,

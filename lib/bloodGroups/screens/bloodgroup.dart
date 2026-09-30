@@ -12,46 +12,10 @@ class BloodGroups extends StatefulWidget {
   State<BloodGroups> createState() => _BloodGroupsState();
 }
 
-class _BloodGroupsState extends State<BloodGroups>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late AnimationController _filterAnimationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
+class _BloodGroupsState extends State<BloodGroups> {
   List<String> bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
   String? bloodGroup;
   bool isFilterExpanded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _filterAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-        parent: _animationController, curve: Curves.easeOutBack));
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    _filterAnimationController.dispose();
-    super.dispose();
-  }
 
   makingPhoneCall(String phoneNumber) async {
     try {
@@ -143,48 +107,6 @@ class _BloodGroupsState extends State<BloodGroups>
             ),
             child: Column(
               children: [
-                // Row(
-                //   children: [
-                //     Container(
-                //       padding: const EdgeInsets.all(16),
-                //       decoration: BoxDecoration(
-                //         color: Colors.white.withOpacity(0.2),
-                //         borderRadius: BorderRadius.circular(16),
-                //       ),
-                //       child: const Icon(
-                //         Icons.bloodtype_rounded,
-                //         color: Colors.white,
-                //         size: 32,
-                //       ),
-                //     ),
-                //     const SizedBox(width: 16),
-                //     Expanded(
-                //       child: Column(
-                //         crossAxisAlignment: CrossAxisAlignment.start,
-                //         children: [
-                //           Text(
-                //             'Blood Donation Network',
-                //             style: GoogleFonts.poppins(
-                //               fontSize: 20,
-                //               fontWeight: FontWeight.w600,
-                //               color: Colors.white,
-                //             ),
-                //           ),
-                //           const SizedBox(height: 4),
-                //           Text(
-                //             'Connect with donors in your area',
-                //             style: GoogleFonts.poppins(
-                //               fontSize: 14,
-                //               color: Colors.white.withOpacity(0.9),
-                //             ),
-                //           ),
-                //         ],
-                //       ),
-                //     ),
-
-                //   ],
-                // ),
-                // const SizedBox(height: 20),
                 _buildBloodGroupFilter(),
               ],
             ),
@@ -225,8 +147,7 @@ class _BloodGroupsState extends State<BloodGroups>
                   bloodGroup = isSelected ? null : group;
                 });
               },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+              child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
@@ -284,7 +205,7 @@ class _BloodGroupsState extends State<BloodGroups>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.clear_rounded, size: 16, color: Colors.white),
+                  const Icon(Icons.clear_rounded, size: 16, color: Colors.white),
                   const SizedBox(width: 4),
                   Text(
                     'Clear Filter',
@@ -355,13 +276,7 @@ class _BloodGroupsState extends State<BloodGroups>
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 itemCount: donors.length,
                 itemBuilder: (context, index) {
-                  return FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: _buildDonorCard(donors[index], index),
-                    ),
-                  );
+                  return _buildDonorCard(donors[index], index);
                 },
               ),
             ),

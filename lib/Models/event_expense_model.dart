@@ -6,6 +6,7 @@ class EventExpenseModel {
   DateTime? createdDate;
   String? id;
   String? expenseName;
+  bool? delete;
   EventExpenseModel({
     this.eventId,
     this.amount,
@@ -13,6 +14,7 @@ class EventExpenseModel {
     this.createdDate,
     this.id,
     this.expenseName,
+    this.delete = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -22,7 +24,8 @@ class EventExpenseModel {
       'userId': userId,
       'createdDate': createdDate,
       'id': id,
-      'expenseName': expenseName
+      'expenseName': expenseName,
+      'delete': delete ?? false,
     };
   }
 
@@ -36,6 +39,7 @@ class EventExpenseModel {
         userId: map['userId'] ?? "",
         createdDate:
             map['createdDate'] == null ? null : map['createdDate'].toDate(),
+        delete: map['delete'] ?? false,
         id: map['id'] ?? "");
   }
 }

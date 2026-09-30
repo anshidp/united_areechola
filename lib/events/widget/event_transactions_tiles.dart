@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class TransactionTiles extends StatelessWidget {
   final String title;
-  dynamic body;
+  final dynamic body;
   final Color bgcolor;
   TransactionTiles(
       {super.key,
